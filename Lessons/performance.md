@@ -1,0 +1,120 @@
+# Performance Tips
+
+## Use compression
+
+```
+npm i compression
+```
+
+```javascript
+const compression = require('compression')
+
+app.use(compression())
+```
+***
+
+
+## Handle exceptions properly
+
+Node apps crash when they encounter an uncaught exception. Not handling exceptions and taking appropriate actions will make your Express app crash and go offline.
+
+1. Use `try..catch`
+
+```javascript
+app.get('/search', function (req, res) {
+	// Simulating async operation
+	setImmediate(function () {
+		var jsonStr = req.query.params
+		try {
+			var jsonObj = JSON.parse(jsonStr)
+			res.send('Success')
+		} catch (e) {
+			res.status(400).send('Invalid JSON string')
+		}
+	})
+})
+```
+
+2. ... and `catch()` in promises
+
+```javascript
+app.get('/', function (req, res, next) {
+	// do some sync stuff
+	queryDb()
+		.then(function (data) {
+			// handle data
+			return makeCsv(data)
+		})
+		.then(function (csv) {
+			// handle csv
+		})
+		.catch(next)
+})
+
+app.use(function (err, req, res, next) {
+	// handle error
+})
+```
+
+You can also use wrapper functions to catch rejected promises:
+
+```javascript
+const asyncMiddleware = fn =>
+	(req, res, next) => {
+		Promise.resolve(fn(req, res, next))
+			.catch(next);
+	};
+
+app.get('/', asyncMiddleware(async (req, res, next) => {
+	const company = await getCompanyById(req.query.id)
+	const stream = getLogoStreamById(company.id)
+	stream.on('error', next).pipe(res)
+}))
+```
+***
+
+
+## Set NODE_ENV to “production”
+
+`process.env.NODE_ENV`
+
+This enables all sorts of caching and improves performance **greatly**. 
+***
+
+
+## Ensure your app automatically restarts
+
+Make sure it restarts both if the app crashes and if the server itself crashes. 
+
+- Using a process manager to restart the app (and Node) when it crashes.
+- Using the init system provided by your OS to restart the process manager when the OS crashes. It’s also possible to use the init system without a process manager.
+
+Process manager - restarts your app:
+
+- StrongLoop: http://strong-pm.io/
+- PM2: https://github.com/Unitech/pm2
+- Forever: https://www.npmjs.com/package/forever
+  
+More info: 
+
+https://expressjs.com/en/advanced/pm.html
+
+https://expressjs.com/en/advanced/best-practice-performance.html#ensure-your-app-automatically-restarts
+
+Init system - restarts the PM if the server restarts:
+
+- systemd
+- Upstart
+
+
+## Other
+
+1. Don't use synchronous functions. This includes `console.log`, `console.error` in production as they are synchronous. 
+2. For logging use:
+   - for debugging: `debug` or similar module.
+   - for app activity: `morgan`, `winston` or `bunyan`
+3. Cache request results\
+4. Use a load balancer
+5. Use a reverse proxy
+
+Learn `nginx`

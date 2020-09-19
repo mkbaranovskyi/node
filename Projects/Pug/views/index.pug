@@ -1,0 +1,88 @@
+extends layout 
+
+//- mixin == function, reusable code
+mixin comment(commentData)
+	//- If we just put a classname, it will append it to a `div`
+	.comment
+		if commentData.postedByAdmin
+			em (by Admin)
+		.date= commentData.date
+		.author= commentData.author
+		.message= commentData.message
+
+block css
+	link(rel="stylesheet", href="css/style.css")
+	style.
+		.comment {
+			font-family: sans-serif;
+			line-height: 1.5;
+			padding: 10px;
+			border: 1px solid #555;
+			width: 250px;
+		}
+
+		.date {
+			font-size: 85%;
+			text-align: right;
+		}
+
+		.author {
+			font-size: 110%;
+			font-weight: bold;
+		}
+
+block content
+	//- include
+	include includes/nav
+
+	//- loops
+	ul
+		for item, index in articles
+			li= item.author
+
+	- const pStyles = {"text-align": "center", "text-transform": "uppercase"}
+	p(style= pStyles) This is paragraph
+
+	each item, index in ['apple', 'orange', 'grape', 'banana']
+		p= `[${index}: ${item}]`
+
+	each item, index in []
+		p= `[${index}: ${item}]`
+	else 
+		strong No values to loop over!
+
+	//- if
+	- const user = {name: 'max', age: 20, loggedIn: false}
+	p
+		if user.age >= 18 && user.loggedIn
+			| Welcome back, 
+			strong #{user.name}
+		else if user.age >= 18
+			a(href="register") Register
+		else 
+			a(href="login") Log in
+
+
+	//- Switch
+	//- orderStatus => 'Pending' || 'In_transit' || 'Completed'
+	- const orderStatus = 'In_Transit'
+
+	case orderStatus
+		when 'Pending'
+			p Your order has been placed and will be sent shortly.
+		when 'In_Transit'
+			p Your order is on the move - you should receive it soon!
+		when 'Completed'
+			p You order has been completed
+		default
+			p Sorry, we aren't sure what happened with your order.
+
+		
+	//- Using mixins
+	- const data1 = {postedByAdmin: true, date: (new Date()).toLocaleTimeString(), author: 'max', message: 'Hey there!'}
+
+	+comment(data1)
+
+	- const data2 = {date: (new Date()).toLocaleTimeString(), author: 'masha', message: 'Hi!'}
+
+	+comment(data2)
