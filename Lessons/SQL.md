@@ -12,23 +12,30 @@
 		- [Databases](#databases)
 		- [Tables](#tables)
 	- [Data manipulation](#data-manipulation)
-		- [`select`](#select)
+		- [`SELECT`](#select)
+		- [`ORDER BY`](#order-by)
+		- [`ALTER`](#alter)
 		- [Insert data](#insert-data)
 		- [`UPDATE`](#update)
 		- [`WHERE`](#where)
 		- [`LIMIT`](#limit)
 		- [`DELETE`](#delete)
-		- [Auto Increment](#auto-increment)
+		- [`AUTO_INCREMENT`](#auto_increment)
 
 ***
 
 ## Sources
 
 1. https://medium.com/@rshrc/mysql-on-manjaro-973e4bfc4f05
-2. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/ER-SQL.md
-3. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/SQL.md
-4. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/SQLHomeWork.md
-5. https://dev.mysql.com/doc/refman/8.0/en/
+2. gitgod:
+   1. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/ER-SQL.md
+   2. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/SQL.md
+   3. http://gitlab.a-level.com.ua/gitgod/PHP/src/master/SQLHomeWork.md
+3. https://www.w3schools.com/sql/
+4. https://dev.mysql.com/doc/refman/8.0/en/
+5. https://www.sqltutorial.org
+6. https://mariadb.com/kb/en/auto_increment/
+7. https://www.techonthenet.com/mysql/tables/alter_table.php#:~:text=The%20syntax%20to%20drop%20a,of%20the%20table%20to%20modify.
 
 
 ***
@@ -80,7 +87,7 @@ Type|Description|Bytes
 `FLOAT(p)`|Floating point number. Effective for mathematical calculations. If precision `p` is 0-24 - the data type is 4-byte `FLOAT`, if `p` is 25-53 - 8-byte `DOUBLE`|4, 8
 `DECIMAL(digits, decimals)` == `NUMERIC`|Fixed point number, effective for calculations where the maximum precision is needed (e.g. with money). `DECIMAL(5,2)` can store values from `-999.99` to `999.99`|Varies
 
-Any of the described types can be **unsigned** if you add the word: `UNSIGNED TINYINT`: 
+Any of the described types can be **unsigned** if you add the word: `TINYINT UNSIGNED`: 
 
 ***
 
@@ -243,6 +250,20 @@ Useful when you want to create a copy of your table on another server (productio
 
 ***
 
+**Delete table**:
+
+```sql
+DROP TABLE Persons;
+```
+
+**Deleta data** from the table but **not the table** itself:
+
+```sql
+TRUNCATE TABLE Persons;
+```
+
+***
+
 **Add a field**:
 
 ```sql
@@ -264,15 +285,94 @@ ALTER TABLE person ADD INDEX (date_of_birth);
 
 ## Data manipulation
 
-### `select`
+### `SELECT`
+
+Powerful tool for getting data from tables:
+
+```sql
+/* not the full list of options */
+SELECT
+    <field1>
+    <field2>
+    <field3>
+    ...
+FROM
+    <table1>
+    <table2>
+    <table3>
+    ...
+WHERE
+    <cond>
+ORDER BY
+    <field1> ASC
+    <field2> DESC
+LIMIT
+    N,M
+```
 
 Show all records:
 
 ```sql
-select * from person;
+SELECT * FROM person;
+SELECT id, name FROM person;
 ```
 
 ***
+
+### `ORDER BY`
+
+Sort data. Can be `ASC` and `DESC`. 
+
+Can be performed by several fields, in this case it sorts by the first field, then by the second (without breaking the first one), etc.
+
+```sql
+SELECT column1, column2, ...
+FROM table_name
+ORDER BY column1, column2, ... ASC|DESC;
+```
+
+***
+
+### `ALTER`
+
+Changes table or columns.
+
+```sql
+/* Add columns */
+
+ALTER TABLE contacts
+	/* add after the column `contact_id` */
+	ADD last_name varchar(40) NOT NULL AFTER contact_id,	
+	/* make the 1st column */
+	ADD first_name varchar(35) NULL FIRST;	
+
+
+/* Delete columns */
+
+ALTER TABLE animals 
+	DROP COLUMN last_name, 
+	DROP COLUMN first_name;
+
+
+/* Modify columns */
+
+ALTER TABLE contacts
+  	MODIFY last_name varchar(55) NULL AFTER contact_type,
+  	MODIFY first_name varchar(30) NOT NULL;
+
+
+/* Rename columns */
+
+ALTER TABLE table_name
+  CHANGE COLUMN old_name new_name 
+    column_definition
+    [ FIRST | AFTER column_name ]
+
+
+/* Rename a table */
+
+ALTER TABLE table_name RENAME TO new_table_name;
+```
 
 ### Insert data
 
@@ -354,19 +454,29 @@ Don't use without `WHERE` or `LIMIT` if you don't want to delete the whole table
 
 ***
 
-### Auto Increment
+### `AUTO_INCREMENT`
 
-Allows a unique number to be generated automatically when a new record is inserted into a table. Often this is the primary key field that we would like to be created automatically every time a new record is inserted.
+Allows a unique number to be generated automatically when a new record is inserted into the table. Often this is the primary key field that we would like to be created automatically every time a new record is inserted.
+
+MySQL and MariaDB use the `AUTO_INCREMENT` keyword to perform an auto-increment feature.
+
+Each table can only have one `AUTO_INCREMENT` column. 
 
 ```sql
-CREATE TABLE Persons (
-    Personid int NOT NULL AUTO_INCREMENT,	/* auto increment */
-    LastName varchar(255) NOT NULL,
-    FirstName varchar(255),
-    Age int,
-    PRIMARY KEY (Personid)
-);
+CREATE TABLE animals (
+     id MEDIUMINT NOT NULL AUTO_INCREMENT,
+     name CHAR(30) NOT NULL,
+     PRIMARY KEY (id)
+ );
+
+INSERT INTO animals (name) VALUES
+    ('dog'),('cat'),('penguin'),
+    ('fox'),('whale'),('ostrich');
+
+SELECT * FROM animals;
 ```
+
+![](img/2020-10-12-12-41-26.png)
 
 The **default** value is 1 and will increment by 1 for each new record. You can set a **different** default value:
 
