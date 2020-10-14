@@ -13,12 +13,12 @@
 		- [Tables](#tables)
 	- [Data manipulation](#data-manipulation)
 		- [`SELECT`](#select)
-		- [`ORDER BY`](#order-by)
-		- [`ALTER`](#alter)
-		- [Insert data](#insert-data)
-		- [`UPDATE`](#update)
 		- [`WHERE`](#where)
 		- [`LIMIT`](#limit)
+		- [`ORDER BY`](#order-by)
+		- [`ALTER`](#alter)
+		- [`INSERT`](#insert)
+		- [`UPDATE`](#update)
 		- [`DELETE`](#delete)
 		- [`AUTO_INCREMENT`](#auto_increment)
 
@@ -250,29 +250,7 @@ Useful when you want to create a copy of your table on another server (productio
 
 ***
 
-**Delete table**:
 
-```sql
-DROP TABLE Persons;
-```
-
-**Deleta data** from the table but **not the table** itself:
-
-```sql
-TRUNCATE TABLE Persons;
-```
-
-***
-
-**Add a field**:
-
-```sql
-ALTER TABLE person ADD COLUMN date_of_birth DATE AFTER person_id;
-```
-
-![](img/2020-10-10-23-14-26.png)
-
-***
 
 **Add index**:
 
@@ -319,6 +297,26 @@ SELECT id, name FROM person;
 
 ***
 
+### `WHERE`
+
+Used to filter records (similar to `if`). See examples below.
+
+***
+
+### `LIMIT`
+
+Limits the amount of changed records. You can use it if you unsure of your changes.
+
+```sql
+UPDATE person SET date_of_birth = '1000-00-00' WHERE person_id > 0 LIMIT 1;
+```
+
+Only one record was changed:
+
+![](img/2020-10-11-22-28-40.png)
+
+***
+
 ### `ORDER BY`
 
 Sort data. Can be `ASC` and `DESC`. 
@@ -361,6 +359,12 @@ ALTER TABLE contacts
   	MODIFY first_name varchar(30) NOT NULL;
 
 
+/* Change the AUTO_INCREMENT default value */
+
+ALTER TABLE test 
+	AUTO_INCREMENT = 100;
+
+
 /* Rename columns */
 
 ALTER TABLE table_name
@@ -371,86 +375,78 @@ ALTER TABLE table_name
 
 /* Rename a table */
 
-ALTER TABLE table_name RENAME TO new_table_name;
+ALTER TABLE table_name 
+	RENAME TO new_table_name;
 ```
 
-### Insert data
+***
+
+### `INSERT`
 
 ```sql
-insert into person (name, father_name) values ('max', 'alex');
+/* Insert one or multiple values */
+
+INSERT INTO person 
+	(firstname, surname) 
+	VALUES 
+		('max', 'bar'),
+		('vlad', 'kravich'),
+		('alina', 'nosova')
+
+	
+/* Clearer way of inserting one value */
+
+INSERT INTO person 
+	SET 
+		date_of_birth = '1999-05-25', 
+		firstname = 'Vasil', 
+		surname = 'Pupkin', 
+		father_name = 'Borisovich';
 ```
 
 Don't touch the **autoincrement** field - it will grow by itself. The rest of the missed fields (`data_of_birth` and `surname` here) will be filled with default values (that can be set upon the table creation).
 
 ***
 
-Clearer way ot inserting data:
-
-```sql
-insert into person set date_of_birth = '1999-05-25', name = 'Vasil', surname = 'Pupkin', father_name = 'Borisovich';
-```
-
-![](img/2020-10-11-21-29-15.png)
-
-***
-
-Insert **column**:
-
-```sql
-alter table person add column fullname varchar(255);
-```
-
 ### `UPDATE`
 
-Update **all** records:
+Update records. Don't use without `WHERE` or `LIMIT` or you can lost your data!
 
 ```sql
-update person set date_of_birth = '2000-00-00';
-```
+/* Update all records !!! */
 
-Update a column:
+UPDATE person 
+	SET date_of_birth = '2000-00-00';
 
-```sql
-UPDATE person SET fullname = CONCAT(name, ' ', father_name, ' ', surname);
+
+/* Update records that meet the condition */
+
+UPDATE person 
+	SET date_of_birth = '1999-05-25' 
+	WHERE person_id = 2;
+
+
+/* Update a column */
+
+UPDATE person 
+	SET fullname = CONCAT(name, ' ', father_name, ' ', surname);
 ```
 
 ![](img/2020-10-11-22-20-42.png)
 
 ***
 
-### `WHERE`
+### `DELETE`, `TRUNCATE`
 
-Used to filter records (similar to `if`). Usually used with `autoincrement` as a unique identifier.
-
-```sql
-UPDATE person SET date_of_birth = '1999-05-25' WHERE person_id = 2;
-```
-
-***
-
-### `LIMIT`
-
-Limits the amount of changed records. You can use it if you unsure of your changes.
+Don't use without `WHERE` or `LIMIT` or you can will your data!
 
 ```sql
-UPDATE person SET date_of_birth = '1000-00-00' WHERE person_id > 0 LIMIT 1;
+/* Delete the matching data */
+DELETE FROM person WHERE person_id < 2;
+
+/* Deleta data but leave the table */
+TRUNCATE TABLE Persons;
 ```
-
-Only one record was changed:
-
-![](img/2020-10-11-22-28-40.png)
-
-***
-
-### `DELETE`
-
-Delete everything:
-
-```sql
-DELETE FROM person where person_id < 2;
-```
-
-Don't use without `WHERE` or `LIMIT` if you don't want to delete the whole table!
 
 ***
 
@@ -459,6 +455,8 @@ Don't use without `WHERE` or `LIMIT` if you don't want to delete the whole table
 Allows a unique number to be generated automatically when a new record is inserted into the table. Often this is the primary key field that we would like to be created automatically every time a new record is inserted.
 
 MySQL and MariaDB use the `AUTO_INCREMENT` keyword to perform an auto-increment feature.
+
+It must be some kind of a **key** (`PRIMARY KEY`, `UNIQUE`, etc.)
 
 Each table can only have one `AUTO_INCREMENT` column. 
 
