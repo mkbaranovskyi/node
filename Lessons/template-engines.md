@@ -1,12 +1,12 @@
 # Template Engines
 
-Allow you serve kinda enhanced HTML with variables in the template that replace the actual values. 
+Allow you serve kinda enhanced HTML with variables in the template that replace the actual values.
 
 To render template files, set the following app setting properties:
 
 ```javascript
 // the directory where the template files are located, defaults to `./views`
-app.set('views', './views')	
+app.set('views', './views')
 // the template engine
 app.set('view engine', 'pug')
 
@@ -22,28 +22,30 @@ app.get('/', (req, res, next) => {
 	 * @param {object} - Object with variables for the template page
 	 * @param {function} - (err, html: string) callback, you can change something before sending the string with the html to the client to be rendered. If you specify this argument, you must explicitly invoke `res.send(html)`
 	 */
-	res.render('index', 
-	{
-		title: 'Hey',
-		message: 'Hello there!',
-		articles
-	},
-	(err, html) => {
-		if(err) {
-			next(err)
+	res.render(
+		'index',
+		{
+			title: 'Hey',
+			message: 'Hello there!',
+			articles
+		},
+		(err, html) => {
+			if (err) {
+				next(err)
+			}
+			res.send(html)
 		}
-		res.send(html)
-	})
+	)
 })
 ```
-***
 
+---
 
 ## Pug
 
 https://gist.github.com/neretin-trike/53aff5afb76153f050c958b82abd9228
 
-A popular veiw engine. **PUG files should be hoooked up as static html files**. 
+A popular veiw engine. **PUG files should be hoooked up as static html files**.
 
 Optional `pug-cli` is a compiler that can generate `html` from `pug` on the fly. Use `pug -w . -o ./public/html -P` to run it.
 
@@ -62,13 +64,13 @@ Max is cool
 | Max is cool
 ```
 
-**Comments**: 
+**Comments**:
 
 `//` - will appear in the rendered HTML.
 
 `//-` - won't appear in the rendered HTML.
 
-Multi-line comments: 
+Multi-line comments:
 
 ```pug
 //-
@@ -95,9 +97,9 @@ Multi-line comments:
 	}
 ```
 
-Single line **JS expressions** are inserted like ES6 multiline strings (with backticks): \`${1 < 3 ? 'ok' : 'ne ok'>}\`
+Single line **JS expressions** are inserted like ES6 multiline strings (with backticks): \`\${1 < 3 ? 'ok' : 'ne ok'>}\`
 
-**Variables** from JS: `div= myVarName` (myVarName is send from the JS during 
+**Variables** from JS: `div= myVarName` (myVarName is send from the JS during
 
 ```javascript
 res.render('index', {
@@ -124,10 +126,10 @@ p
 	if user.age > 18 && user.loggedIn == true
 		| Welcome,
 		strong #{user.name}
-	
+
 ```
 
-**Loops**: basically `forEach`, `each` === `for` 
+**Loops**: basically `forEach`, `each` === `for`
 
 ```pug
 for item in arr
@@ -146,7 +148,7 @@ each item, index in ['apple', 'orange', 'grape', 'banana']
 ```pug
 each item, index in []
 	p= `[${index}: ${item}]`
-else 
+else
 	strong No values to loop over!
 ```
 
@@ -167,7 +169,7 @@ case orderStatus
 		p Sorry, we aren't sure what happened with your order.
 ```
 
-**Mixins** work like `functions`. 
+**Mixins** work like `functions`.
 
 ```pug
 mixin comment(commentData)
@@ -202,21 +204,21 @@ style. {
 a.bang(class=classes class=['bing'])
 ```
 
-***
+---
 
-Full example: 
+Full example:
 
-```pug
+````pug
 //- layout.pug - template page
 doctype html
 html(lang='en')
 	head
 		title= title
 		//- `block css` will insert css specific for each page
-		block css	
-		
+		block css
+
 	body
-		//- `block content` 
+		//- `block content`
 		block content
 	br
 	hr
@@ -225,7 +227,7 @@ html(lang='en')
 
 
 //- index.pug - index page, should start with extending a block as the rest will be taken from the template
-extends layout 
+extends layout
 
 //- mixin == function, reusable code
 mixin comment(commentData)
@@ -239,7 +241,7 @@ mixin comment(commentData)
 
 block css
 	link(rel="stylesheet", href="css/style.css")
-	
+
 	//- dot at the end!
 	style.
 		.comment {
@@ -277,18 +279,18 @@ block content
 
 	each item, index in []
 		p= `[${index}: ${item}]`
-	else 
+	else
 		strong No values to loop over!
 
 	//- if
 	- const user = {name: 'max', age: 20, loggedIn: false}
 	p
 		if user.age >= 18 && user.loggedIn
-			| Welcome back, 
+			| Welcome back,
 			strong #{user.name}
 		else if user.age >= 18
 			a(href="register") Register
-		else 
+		else
 			a(href="login") Log in
 
 
@@ -306,7 +308,7 @@ block content
 		default
 			p Sorry, we aren't sure what happened with your order.
 
-		
+
 	//- Using mixins
 	- const data1 = {postedByAdmin: true, date: (new Date()).toLocaleTimeString(), author: 'max', message: 'Hey there!'}
 
@@ -315,4 +317,4 @@ block content
 	- const data2 = {date: (new Date()).toLocaleTimeString(), author: 'masha', message: 'Hi!'}
 
 	+comment(data2)
-	```
+````
