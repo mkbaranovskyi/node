@@ -6,11 +6,17 @@
 	- [Important Middleware in Express](#important-middleware-in-express)
 		- [Static folder](#static-folder)
 		- [Body parser](#body-parser)
+		- [Routing](#routing)
+		- [Validators](#validators)
+		- [Receiving files and FormData](#receiving-files-and-formdata)
 	- [Creating Middleware](#creating-middleware)
 		- [Async handlers](#async-handlers)
 	- [Error Handling](#error-handling)
 		- [Sync Errors](#sync-errors)
 		- [Async Errors](#async-errors)
+		- [Async built-in functions](#async-built-in-functions)
+		- [Simplifications](#simplifications)
+		- [Custom Error Middleware](#custom-error-middleware)
 
 ***
 
@@ -105,13 +111,38 @@ To handle incoming files (from `<input type="file">`), use [multer](https://www.
 ***
 
 
+### Routing
+
+See the corresponding lesson about routing middleware.
+
+***
+
+
+### Validators
+
+For validation and saninization of the incoming data use `validator` and `express-validator`. See the corresponding lesson. 
+
+***
+
+
+### Receiving files and FormData
+
+`multer` handles sent files. 
+
+`multyparty` handles `FormData`. 
+
+See the corresponding lessons or documentation.
+
+***
+
+
 ## Creating Middleware
 
 The basic requirements to middleware are:
 
 1. Accepts 3 parameters
 2. The 3rd one is a function
-3. Call that function
+3. Call that function to pass execution
 
 ```js
 const express = require('express')
@@ -197,7 +228,7 @@ If you don't catch this error, your server **won't** crush but the client **will
 
 ***
 
-The same stands for planned code
+The same stands for the planned code
 
 ```js
 const express = require('express')
@@ -216,8 +247,191 @@ app.get('/', (req, res, next) => {
 app.listen(3000)
 ```
 
+The app survived
+
 ![](img/2020-10-22-22-55-05.png)
 
 If you don't catch this error, your app **will** crush
 
 ![](img/2020-10-22-22-56-39.png)
+
+***
+
+In case of nested async and planned code, you should catch errors on the deepest level
+
+```js
+const express = require('express')
+const app = express()
+
+app.get('/', (req, res, next) => {
+	setTimeout(() => {
+		new Promise((resolve, reject) => {
+			try {
+				throw new Error('BROKEN')
+			} catch (err) {
+				next(err)
+			}
+		})
+	}, 1000)
+})
+
+app.listen(3000)
+```
+
+If you don't catch this error, the client **will** hang. 
+
+***
+
+
+### Async built-in functions
+
+Errors go to the `err` parameter - pass it to Express via `next(err)`
+
+```js
+const express = require('express')
+const app = express()
+const fs = require('fs')
+
+app.get('/', function (req, res, next) {
+	fs.readFile(
+		'/file-does-not-exist',
+		function (err, data) {
+			if (err) {
+				next(err)
+			} else {
+				res.send(data)
+			}
+		}
+	)
+})
+
+app.listen(3000)
+```
+
+If you don't catch this error, it will **silently fail** to work and you'll never know it. 
+
+***
+
+
+### Simplifications
+
+If the callback has only 1 argument - `err`, you can **simplify** the code:
+
+```js
+fs.writeFile('/inaccessible-path', 'data', next)
+
+// the same for Promises - just pass `next` to the `.catch` block
+Promise.resolve()
+	.then(() => { throw new Error('BROKEN') })
+	.catch(next)
+```
+
+You can also **simplify** it if you rely on a chain of handlers and your starting handlers didn't intent to end the client-server interaction:
+
+```js
+const express = require('express')
+const app = express()
+const fs = require('fs')
+
+app.get(
+	'/',
+	(req, res, next) => {
+		fs.readFile(
+			'/maybe-valid-file', 'utf-8',
+			(err, data) => {
+				// no need for `if(err) next(err); else ...
+				res.locals.data = data
+				next(err)
+			})
+	},
+	(req, res) => {
+		res.locals.data = res.locals.data.split(',')[1]
+		res.send(res.locals.data)
+	}
+)
+
+app.listen(3000)
+```
+
+***
+
+
+### Custom Error Middleware
+
+Express has a built-in default error handler. But you can write your own behavior for it. Just create a middleware not with 3 but with 4 parameters at the end of the middleware chain. The first param gets the error object.
+
+```js
+app.use((err, req, res, next) => {
+  // middleware functionality here
+})
+```
+
+Complete example with one handler
+
+```js
+const express = require('express')
+const app = express()
+
+app.get('/', (req, res, next) => {
+	next(new Error('I am passing you an error!'))
+})
+
+// if you make 3 params here instead of 4 - this handler will not be called but the Express' default one will
+app.use((err, req, res, next) => {
+	// to indicate this handler worked and not the Express' default one
+	console.log('ACHTUNG!') 
+
+	console.log(err)
+	// always make this check or you can produce another error
+	if (!res.headersSent) {
+		res.status(500).send(err.message)
+	}
+})
+
+app.listen(3000)
+```
+
+We can also use several handlers for different errors
+
+```js
+const express = require('express')
+const app = express()
+
+app.get('/nonexistent', (req, res, next) => {
+	const err = new Error('I couldn\'t find it.')
+	err.httpStatusCode = 404
+	next(err)
+})
+
+app.get('/problematic', (req, res, next) => {
+	const err = new Error('I\'m sorry, you can\'t do that, Dave.')
+	err.httpStatusCode = 304
+	next(err)
+})
+
+// Handles 404 errors
+app.use((err, req, res, next) => {
+	if (err.httpStatusCode === 404) {
+		res.sendStatus(400)
+	}
+	next(err)
+})
+
+// Handles 304 errors
+app.use((err, req, res, next) => {
+	if (err.httpStatusCode === 304) {
+		res.sendStatus(304)
+	}
+	next(err)
+})
+
+// This handler will catch all middleware errors - but it only goes through `if` in case when none of the previous handlers has yet responded to the client
+app.use((err, req, res, next) => {
+	console.log(err)
+	if (!res.headersSent) {
+		res.sendStatus(err.httpStatusCode || 500)
+	}
+})
+
+app.listen(3000)
+```

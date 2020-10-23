@@ -7,6 +7,35 @@
 	<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-	<h1>Main page</h1>
+	<form name="registerForm">
+        <label>Имя</label></br>
+        <input type="text" name="userName" /></br></br>
+        <label>Возраст</label></br>
+        <input type="number" name="userAge" /></br></br>
+        <button type="submit" id="submit">Отправить</button>
+	</form>
+	
+	<script>
+		const form = document.forms.registerForm
+
+		form.onsubmit = async e => {
+			e.preventDefault()
+
+			const userName = form.userName
+			const userAge = form.userAge
+
+			const response = await fetch('http://localhost:5001/form', {
+				method: "POST",
+				headers: {
+				// 'Content-Type': 'application/json'
+				'Content-Type': 'application/x-www-form-urlencoded'
+				},
+				body: JSON.stringify({userName: userName.value, userAge: userAge.value})
+			})
+
+			const result = await response.json()
+			console.log(result)
+		}
+	</script>
 </body>
 </html>
