@@ -1,4 +1,22 @@
-# Performance Tips
+# Performance and Security
+
+- [Performance and Security](#performance-and-security)
+	- [Sources](#sources)
+	- [Use compression](#use-compression)
+	- [Handle exceptions properly](#handle-exceptions-properly)
+	- [Set NODE_ENV to “production”](#set-node_env-to-production)
+	- [Ensure your app automatically restarts](#ensure-your-app-automatically-restarts)
+	- [Other](#other)
+
+***
+
+## Sources
+
+1. f
+2. https://www.npmjs.com/package/helmet - helmet middleware
+3. https://codeburst.io/what-is-prototype-pollution-49482fc4b638 - prototype pollution
+4. https://github.com/cure53/DOMPurify - DOMPurity - XSS-attacks
+5. https://github.com/jameslk/awesome-falsehoods - falsehoods programmers believe
 
 ## Use compression
 
