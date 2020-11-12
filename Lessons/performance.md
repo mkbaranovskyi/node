@@ -136,3 +136,9 @@ Init system - restarts the PM if the server restarts:
 5. Use a reverse proxy
 
 Learn `nginx`
+
+***
+
+https://nodejs.org/en/docs/guides/dont-block-the-event-loop/#don-t-block-the-event-loop
+
+3. Don't perform unsafe dynamic *regexp*. See [safe-regex](https://github.com/substack/safe-regex) and [RXXR2](https://www.cs.bham.ac.uk/~hxt/research/rxxr2/) for more info about unsafe regexp. Also see the [node-re2](https://github.com/uhop/node-re2) module.
