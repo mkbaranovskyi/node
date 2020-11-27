@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+
+<form>
+	<input type="file" name="sendfile">
+	<button type="submit" name="submit">Submit</button>
+</form>
+
+<script>
+	const $form = document.forms[0]
+	$form.addEventListener('submit', e => submitForm(e))
+
+	async function submitForm(e) {
+		e.preventDefault()
+		const file = document.forms[0].sendfile.files[0]
+
+		const response = await fetch('upload', {
+			method: 'POST',
+			body: file
+		})
+		const result = await response.text()
+		console.log(result)
+	}
+</script>
