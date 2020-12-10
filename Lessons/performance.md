@@ -29,44 +29,41 @@ const compression = require('compression')
 
 app.use(compression())
 ```
+
 ***
 
 
 ## Handle exceptions properly
 
-Node apps crash when they encounter an uncaught exception. Not handling exceptions and taking appropriate actions will make your Express app crash and go offline.
+If an uncaught exception gets thrown during the execution of your program, your program will crash.
 
-1. Use `try..catch`
+1. Use `try..catch` and `.catch()` in promises.
 
 ```javascript
-app.get('/search', function (req, res) {
-	// Simulating async operation
-	setImmediate(function () {
-		var jsonStr = req.query.params
+app.get('/planned', (req, res, next) => {
+	setImmediate(() => {
+		const jsonStr = req.query.params
 		try {
-			var jsonObj = JSON.parse(jsonStr)
+			const jsonObj = JSON.parse(jsonStr)
 			res.send('Success')
 		} catch (e) {
 			res.status(400).send('Invalid JSON string')
 		}
 	})
 })
-```
 
-2. ... and `catch()` in promises
-
-```javascript
-app.get('/', function (req, res, next) {
-	// do some sync stuff
+app.get('/promise', (req, res, next) => {
 	queryDb()
-		.then(function (data) {
-			// handle data
-			return makeCsv(data)
-		})
-		.then(function (csv) {
-			// handle csv
-		})
+		.then(data => makeCsv(data))
 		.catch(next)
+})
+
+app.get('/async', async (req, res, next) => {
+	try {
+    await someOtherFunction()
+  } catch (err) {
+    console.error(err.message)
+  }
 })
 
 app.use(function (err, req, res, next) {
@@ -80,7 +77,7 @@ You can also use wrapper functions to catch rejected promises:
 const asyncMiddleware = fn =>
 	(req, res, next) => {
 		Promise.resolve(fn(req, res, next))
-			.catch(next);
+			.catch(next)
 	};
 
 app.get('/', asyncMiddleware(async (req, res, next) => {
@@ -89,14 +86,41 @@ app.get('/', asyncMiddleware(async (req, res, next) => {
 	stream.on('error', next).pipe(res)
 }))
 ```
+
+***
+
+2. Catch uncaught exceptions using the `uncaughtException` event on the `process` object:
+
+```js
+process.on('uncaughtException', err => {
+  console.error('There was an uncaught error', err)
+  process.exit(1) //mandatory (as per the Node.js docs)
+})
+```
+
 ***
 
 
 ## Set NODE_ENV to “production”
 
-`process.env.NODE_ENV`
+https://nodejs.dev/learn/nodejs-the-difference-between-development-and-production
 
 This enables all sorts of caching and improves performance **greatly**. 
+
+1. Execute this (does not persist after the server restart):
+
+```js
+export NODE_ENV=production
+```
+
+2. Put it into your `bash_profile` to persist. 
+3. Run your app using:
+
+```bash
+NODE_ENV=production node app.js
+```
+
+
 ***
 
 

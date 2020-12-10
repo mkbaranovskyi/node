@@ -4,24 +4,24 @@ const util = require('util')
 const events = require('events')
 const stream = require('stream')
 const {
-	Readable,
-	once
+  Readable,
+  once
 } = stream
 const {
-	promisify
+  promisify
 } = require('util')
 const finished = promisify(stream.finished)
 const {
-	check,
-	validationResult,
-	matchedData
+  check,
+  validationResult,
+  matchedData
 } = require('express-validator')
 const multer = require('multer')
 const upload1 = multer({
-	dest: 'uploads/'
+  dest: 'uploads/'
 })
 const upload2 = multer({
-	dest: 'uploads/'
+  dest: 'uploads/'
 })
 const pipeline = promisify(require('stream').pipeline)
 const stat = promisify(fs.stat)
@@ -44,49 +44,49 @@ const router = express.Router()
 // })
 
 router.get('/form', (req, res, next) => {
-	console.log(req.query)
-	res.send(req.query)
+  console.log(req.query)
+  res.send(req.query)
 })
 
 router.post('/form',
-	upload1.single('send-file'),
-	(req, res, next) => {
-		console.log(req.file)
-		// res.sendFile('index.html')
-	}
+  upload1.single('send-file'),
+  (req, res, next) => {
+    console.log(req.file)
+    // res.sendFile('index.html')
+  }
 )
 
-async function pipeData(origin, dest) {
-	try {
-		const write = buildWrite(dest)
-		for await (const chunk of origin) {
-			await write(chunk)
-		}
-		await finished(dest)
-	} catch (err) {
-		console.error(err)
-	}
+async function pipeData (origin, dest) {
+  try {
+    const write = buildWrite(dest)
+    for await (const chunk of origin) {
+      await write(chunk)
+    }
+    await finished(dest)
+  } catch (err) {
+    console.error(err)
+  }
 }
 
-function buildWrite(stream) {
-	let streamError = null
-	stream.on('error', (err) => {
-		streamError = err
-	})
+function buildWrite (stream) {
+  let streamError = null
+  stream.on('error', (err) => {
+    streamError = err
+  })
 
-	return function (chunk) {
-		if (streamError) {
-			return Promise.reject(streamError)
-		}
+  return function (chunk) {
+    if (streamError) {
+      return Promise.reject(streamError)
+    }
 
-		const isDrained = stream.write(chunk)
+    const isDrained = stream.write(chunk)
 
-		if (!isDrained) {
-			return once(stream, 'drain')
-		}
+    if (!isDrained) {
+      return once(stream, 'drain')
+    }
 
-		return Promise.resolve()
-	}
+    return Promise.resolve()
+  }
 }
 
 module.exports = router

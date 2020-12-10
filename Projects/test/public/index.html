@@ -1,43 +1,11 @@
 <!DOCTYPE html>
 
-<form>
-	<input type="file" name="sendfile"><br>
-	<button type="submit" name="submit">Submit</button>
+<form action="/form" enctype="multipart/form-data">
+	<input type="text" name="" id="">
+	<input type="file" name="" id="">
+	<button type="submit">Submit</button>
 </form>
 
-<button id="stop" onclick="uploader.stop()">Stop</button><br>
-<progress name="uploadProgress" hidden></progress>
-
-<script src="js/Uploader.js"></script>
 <script>
-	function displayProgress(e) {
-		console.log('Upload in progress...')
-		// console.log(e)
-		$progress.hidden = false
-		const value = ((this.startByte + e.loaded) / (this.startByte + e.total)).toPrecision(2)
-		console.log(value)
-		$progress.value = value
-	}
-
-	async function submitForm(e) {
-		e.preventDefault()
-
-		let file = document.forms[0].sendfile.files[0]
-		if (!file) return
-
-		uploader = new Uploader(file, displayProgress)
-
-		try {
-			const result = await uploader.upload()
-			console.log(result)
-		} catch (err) {
-			console.error(err)
-		}
-	}
-
-	const $form = document.forms[0]
-	$form.addEventListener('submit', e => submitForm(e))
-	const $progress = document.getElementsByName('uploadProgress')[0]
-
-	let uploader
+	document.title = 'Vlad poc'
 </script>
