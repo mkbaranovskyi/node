@@ -37,47 +37,44 @@ class MyWritable extends Writable {
 	constructor(filename) {
 		super()
 		this.filename = filename
-		this.fd = fd
 	}
-	_construct(callback) {
-		fs.open(this.filename, (fd, err) => {
+
+	_construct(cb) {
+		fs.open(this.filename, 'a', (err, fd) => {
 			if (err) {
-				callback(err)
+				cb(err)
 			} else {
 				this.fd = fd
-				callback()
+				cb()
 			}
 		})
 	}
-	_write(chunk, encoding, callback) {
-		fs.write(this.fd, chunk, callback)
+
+	_write(chunk, encoding, next) {
+		const data = chunk.slice(0, chunk.length - 1) + '!!!\n'
+
+		fs.write(this.fd, data, (err, bytesWritten, buffer) => {
+			if (err) {
+				return console.error(err)
+			}
+			console.log('Written!')
+		})
+
+		next()
 	}
-	_destroy(err, callback) {
+
+	_destroy(err, cb) {
 		if (this.fd) {
-			fs.close(this.fd, (er) => callback(er || err))
+			fs.close(this.fd, (er) => cb(er || err))
 		} else {
-			callback(err)
+			cb(err)
 		}
 	}
 }
 // const r = new Readable()
 // r._read = () => {}
 
-const w = new MyWritable()
-// Our stream implementation that will write chunks to a file adding '!!!' to each chunk
-w._write = (chunk, encoding, next) => {
-	const writableToDisk = fs.createWriteStream(
-		path.join('uploads', `text.txt`),
-		{ flags: 'a' }
-	)
-
-	// For some reason, the chunk adds `\n` at the end, so we cut it and then reattack after our addition
-	const data = chunk.slice(0, chunk.length - 1) + '!!!\n'
-	writableToDisk.write(data, (err) => console.error(err))
-
-	// Calling `next()` is needed for the next iteration to occur
-	next()
-}
+const w = new MyWritable(path.join(__dirname, 'uploads', 'text.txt'))
 
 // r.push('Hi\n')
 // r.push('Ho\n')
