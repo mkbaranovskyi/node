@@ -1,17 +1,11 @@
-const util = require('util')
-const fs = require('fs')
-const zlib = require('zlib')
+const express = require('express')
+const app = express()
+const Cookies = require('js-cookie')
 
-const pipeline = util.promisify(require('stream').pipeline)
+app.get('/', (req, res, next) => {
+	res.end('<b>Hello</b>')
+})
 
-async function run() {
-	await pipeline(
-		fs.createReadStream('archive.tar'),
-		zlib.createGzip(),
-		fs.createWriteStream('archive.tar.gz')
-	)
-	throw new Error('oops')
-	console.log('Pipeline succeeded.')
-}
+app.use(express.static('public'))
 
-run().catch((err) => console.error('yo'), '!!!')
+app.listen(5000)
