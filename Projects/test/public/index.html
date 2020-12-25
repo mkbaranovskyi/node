@@ -1,11 +1,17 @@
 <!DOCTYPE html>
 
-Ku
+<form action="/form" method="POST" enctype="multipart/form-data">
+	<input type="text" name="username" value="M"><br>
+	<input type="email" name="e-mail" value=" MAX-BAR@serv.CoM "><br>
 
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+	<label for="other">Other / Don't want to say</label>
+	<input type="radio" name="gender" id="other" value="other" checked><br>
+	<label for="male">Male</label>
+	<input type="radio" name="gender" id="male" value="male"><br>
+	<label for="female">Female</label>
+	<input type="radio" name="gender" id="female" value="female"><br>
 
-<script>
-	Cookies.defaults.expires = 6
-	// Cookies.set('test', 'value')
-	console.log(document.cookie) // 'name={%22foo%22:%22bar%22}'
-</script>
+	<input type="file" name="send-file" id="file">
+
+	<button type="submit">Subscribe</button>
+</form>
