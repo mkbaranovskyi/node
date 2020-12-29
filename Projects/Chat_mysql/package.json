@@ -1,0 +1,17 @@
+{
+  "name": "chat_mysql",
+  "version": "1.0.0",
+  "description": "Chat test project using mysql2",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mkbaranovskyi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "express-validator": "^6.9.0",
+    "multer": "^1.4.2",
+    "mysql2": "^2.2.5"
+  }
+}
