@@ -8,17 +8,20 @@
 </head>
 
 <body>
-	<form name="send-message" action="/send-message" method="POST" enctype="multipart/form-data">
+	<form name="send-message">
 		<label for="username">Enter your nick:</label>
 		<input type="text" name="username" id="username" value="Max"><br>
 		<label for="male">Enter your message:</label>
 		<input type="text" name="message" id="message" value="is cool"><br>
 
-		<!-- <input type="file" name="send-file" id="file"> -->
+		<input type="file" name="file" id="file">
 
 		<button type="submit">Send</button>
 	</form>
 
+	<section id="chat_content"></section>
+
+	<script src="/socket.io/socket.io.js"></script>
 	<script src="js/script.js"></script>
 
 </body>

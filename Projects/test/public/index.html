@@ -1,17 +1,48 @@
 <!DOCTYPE html>
 
-<form action="/form" method="POST" enctype="multipart/form-data">
-	<input type="text" name="username" value="M"><br>
-	<input type="email" name="e-mail" value=" MAX-BAR@serv.CoM "><br>
+<body>
+	<form name="myform">
+		<input type="text" name="nick" value="Max"><br>
+		<input type="text" name="msg" value="Hello, World!"><br>
+		<button type="submit">Submit</button>
+	</form>
 
-	<label for="other">Other / Don't want to say</label>
-	<input type="radio" name="gender" id="other" value="other" checked><br>
-	<label for="male">Male</label>
-	<input type="radio" name="gender" id="male" value="male"><br>
-	<label for="female">Female</label>
-	<input type="radio" name="gender" id="female" value="female"><br>
+	<secrion id="messages"></secrion>
 
-	<input type="file" name="send-file" id="file">
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		const socket = io()
+		localStorage.debug = 'socket.io-client:socket'
 
-	<button type="submit">Subscribe</button>
-</form>
+		$form = document.forms.myform
+		$messages = document.getElementById('messages')
+
+		$form.addEventListener('submit', e => {
+			e.preventDefault()
+			// Forbid empty fields
+			if (!$form.elements.nick.value || !$form.elements.msg.value) {
+				return
+			}
+
+			const message = {
+				nick: $form.elements.nick.value,
+				msg: $form.elements.msg.value
+			}
+
+			// Render the message for the sender
+			renderMessage(message)
+
+			// Send the message for the rest of users
+			socket.emit('chat message', message)
+			$form.elements.msg.value = ''
+		})
+
+		socket.on('chat message', renderMessage)
+
+		function renderMessage(data) {
+			const message = document.createElement('article')
+			$messages.prepend(message)
+			message.innerHTML = `<b>${data.nick}:</b> ${data.msg}`
+		}
+	</script>
+</body>

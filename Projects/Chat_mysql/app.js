@@ -1,15 +1,18 @@
+const http = require('http')
 const express = require('express')
 const app = express()
-const http = require('http')
+const server = http.createServer(app)
+const io = require('socket.io')(server)
 const path = require('path')
 const mysql = require('mysql2')
-
-const { check, matchedData, validationResult } = require('express-validator')
-
 const multer = require('multer')
+const { check, matchedData, validationResult } = require('express-validator')
+const { pipeline } = require('stream/promises')
+const PORT = process.env.PORT || 5000
+
 const storage = multer.diskStorage({
 	destination: function (req, file, cb) {
-		console.log(file) // <--- Uploaded file info
+		console.log(file)
 		cb(null, path.join(__dirname, 'uploads'))
 	},
 	filename: function (req, file, cb) {
@@ -17,9 +20,6 @@ const storage = multer.diskStorage({
 	}
 })
 const upload = multer({ storage })
-
-const PORT = process.env.PORT || 5000
-const server = http.createServer(app)
 
 const connection = mysql
 	.createConnection({
@@ -33,20 +33,42 @@ const connection = mysql
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-app.post('/send-message', upload.single('file'), async (req, res, next) => {
-	try {
-		console.log(req.body)
-		const sql_params = [req.body.username, req.body.message]
-		const sql_query =
-			'INSERT Messages (Username, Message, PostDate) VALUES (?, ?, NOW())'
-		const sql_result = await connection.execute(sql_query, sql_params)
-		console.log(sql_result)
+io.on('connection', async (socket) => {
+	socket.on('chat messages', (msg) => {
+		console.log(msg)
+		sqlInsertMessages(msg)
+		socket.broadcast.emit('chat messages', [msg])
+	})
 
-		res.send('Your message is delivered')
-	} catch (err) {
-		next(err)
-	}
+	socket.on('disconnect', () => {
+		console.log('user disconnected')
+	})
+
+	// Send the existing chat history to the client
+	let chatHistory = await sqlGetMessages(0)
+	// Leave only the info the user needs
+	chatHistory = chatHistory.map((record) => {
+		const { Username, Message, PostDate } = record
+		return { Username, Message, PostDate }
+	})
+	// console.log(chatHistory)
+	socket.emit('chat messages', chatHistory)
 })
+
+async function sqlInsertMessages(body) {
+	const sql_params = [body.Username, body.Message]
+	const sql_query =
+		'INSERT Messages (Username, Message, PostDate) VALUES (?, ?, NOW())'
+	const sql_result = await connection.execute(sql_query, sql_params)
+	return sql_result
+}
+
+async function sqlGetMessages(lastMessageId) {
+	const sql_params = [lastMessageId]
+	const sql_query = 'SELECT * FROM Messages WHERE ID > ?;'
+	const sql_result = await connection.execute(sql_query, sql_params)
+	return sql_result[0]
+}
 
 app.use(express.static(path.join(__dirname, 'public')))
 
