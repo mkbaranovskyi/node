@@ -3,10 +3,11 @@ const socket = io()
 const $form = document.forms['send-message']
 const $chat_content = document.getElementById('chat_content')
 const $file_input = $form.file
-let lastMessageId = 0
+socket.nextMessageId = 0
 
 $form.addEventListener('submit', (e) => {
 	e.preventDefault()
+	console.log('socket.nextMessageId', socket.nextMessageId)
 
 	const message = {
 		Username: $form.username.value,
@@ -14,15 +15,26 @@ $form.addEventListener('submit', (e) => {
 		PostDate: new Date()
 	}
 
+	if (!message.Username || !message.Message) {
+		return
+	}
+
 	socket.emit('chat messages', message)
 
 	$form.elements.message.value = ''
-	renderMessage([message])
+	renderMessages([message])
 })
 
-socket.on('chat messages', renderMessage)
+socket.on('connect', () => {
+	console.log(socket.nextMessageId)
+	socket.emit('get messages', socket.nextMessageId)
+})
 
-function renderMessage(messages) {
+socket.on('chat messages', renderMessages)
+
+socket.on('next id', (id) => (socket.nextMessageId = id))
+
+function renderMessages(messages) {
 	messages.forEach((message) => {
 		let date = new Date(message.PostDate.toString())
 		date = date.toLocaleString()

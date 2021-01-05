@@ -1,3 +1,4 @@
+'use strict'
 const http = require('http')
 const express = require('express')
 const app = express()
@@ -35,6 +36,7 @@ app.use(express.urlencoded({ extended: false }))
 
 io.on('connection', async (socket) => {
 	socket.on('chat messages', (msg) => {
+		console.log(socket.test)
 		console.log(msg)
 		sqlInsertMessages(msg)
 		socket.broadcast.emit('chat messages', [msg])
@@ -44,15 +46,24 @@ io.on('connection', async (socket) => {
 		console.log('user disconnected')
 	})
 
-	// Send the existing chat history to the client
-	let chatHistory = await sqlGetMessages(0)
-	// Leave only the info the user needs
-	chatHistory = chatHistory.map((record) => {
-		const { Username, Message, PostDate } = record
-		return { Username, Message, PostDate }
+	socket.on('get messages', async (nextMessageId) => {
+		let chatHistory = await sqlGetMessages(nextMessageId)
+		if (!chatHistory.length) {
+			return
+		}
+
+		// Leave only the info the user needs
+		let maxID = 0
+		chatHistory = chatHistory.map((record) => {
+			const { Username, Message, PostDate } = record
+			if (record.ID > maxID) maxID = record.ID
+			return { Username, Message, PostDate }
+		})
+
+		// console.log(chatHistory)
+		socket.emit('chat messages', chatHistory)
+		socket.emit('next id', maxID + 1)
 	})
-	// console.log(chatHistory)
-	socket.emit('chat messages', chatHistory)
 })
 
 async function sqlInsertMessages(body) {
@@ -63,9 +74,9 @@ async function sqlInsertMessages(body) {
 	return sql_result
 }
 
-async function sqlGetMessages(lastMessageId) {
-	const sql_params = [lastMessageId]
-	const sql_query = 'SELECT * FROM Messages WHERE ID > ?;'
+async function sqlGetMessages(nextMessageId) {
+	const sql_params = [nextMessageId]
+	const sql_query = 'SELECT * FROM Messages WHERE ID >= ?;'
 	const sql_result = await connection.execute(sql_query, sql_params)
 	return sql_result[0]
 }
