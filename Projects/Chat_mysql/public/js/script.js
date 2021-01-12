@@ -1,44 +1,87 @@
-'use strict'
 const socket = io()
-const $form = document.forms['send-message']
+const $formSend = document.forms['send-message']
+const $formRooms = document.forms['chat-rooms']
+const $roomElem = document.getElementById('roomElem')
 const $chat_content = document.getElementById('chat_content')
-const $file_input = $form.file
-socket.nextMessageId = 0
+const $file_input = $formSend.file
+const $btn_add_room = document.getElementById('btn-add-room')
+const messagesHistory = new Map()
 
-$form.addEventListener('submit', (e) => {
+socket.once('connect', onConnect)
+socket.on('getRooms', onGetRooms)
+socket.on('getMessages', onGetMessages)
+socket.on('updateHistory', onUpdateHistory)
+socket.on('roomCreated', onRoomCreated)
+socket.on('roomRejected', onRoomRejected)
+
+$roomElem.addEventListener('change', (e) => {
+	console.log('Room Changed')
+	// Clear the chat history for the previous room
+	$chat_content.innerHTML = '' // Ask for messages for the current room
+	socket.emit('getMessages', {
+		roomName: $roomElem.value,
+		nextMessageID: 0
+	})
+})
+
+$btn_add_room.addEventListener('click', addNewRoom)
+
+$formSend.addEventListener('submit', (e) => {
 	e.preventDefault()
-	console.log('socket.nextMessageId', socket.nextMessageId)
 
 	const message = {
-		Username: $form.username.value,
-		Message: $form.message.value,
-		PostDate: new Date()
+		Username: $formSend.username.value,
+		Message: $formSend.message.value,
+		PostDate: new Date(),
+		roomName: $roomElem.value
 	}
 
 	if (!message.Username || !message.Message) {
 		return
 	}
 
-	socket.emit('chat messages', message)
+	socket.emit('postMessage', message)
 
-	$form.elements.message.value = ''
+	$formSend.elements.message.value = ''
 	renderMessages([message])
 })
 
-socket.on('connect', () => {
-	console.log(socket.nextMessageId)
-	socket.emit('get messages', socket.nextMessageId)
-})
+function renderRoom(roomName) {
+	const option = document.createElement('option')
+	option.value = roomName
+	option.textContent = roomName
+	option.selected = true
+	$roomElem.append(option)
+}
 
-socket.on('chat messages', renderMessages)
+function renderAllRooms(roomList) {
+	$roomElem.innerHTML = ''
+	roomList.sort()
+	roomList.forEach((roomName) => renderRoom(roomName))
 
-socket.on('next id', (id) => (socket.nextMessageId = id))
+	// Optional: made `Common` the default selected room
+	if (roomList.includes('Common')) {
+		for (const option of $roomElem.children) {
+			if (option.textContent === 'Common') {
+				option.selected = true
+				break
+			}
+		}
+	}
+}
+
+function updateHistory(options) {
+	messagesHistory.set(options.roomName, options.nextMessageID)
+}
 
 function renderMessages(messages) {
 	messages.forEach((message) => {
 		let date = new Date(message.PostDate.toString())
 		date = date.toLocaleString()
-		console.log(date)
+
+		if (message.roomName !== $roomElem.value) {
+			return
+		}
 
 		const $message_elem = document.createElement('article')
 		$chat_content.prepend($message_elem)
@@ -46,8 +89,78 @@ function renderMessages(messages) {
 	})
 }
 
-// function renderMessage(data) {
-// 	const message = document.createElement('article')
-// 	$chat_content.prepend(message)
-// 	message.innerHTML = `<b>${data.username}:</b> ${data.message}`
-// }
+function addNewRoom() {
+	$btn_add_room.style.display = `none`
+
+	const $roomCreationElements = document.createElement('div')
+	const $inputRoomName = document.createElement('input')
+	const $btnOk = document.createElement('button')
+	const $btnCancel = document.createElement('button')
+
+	$roomCreationElements.style.display = 'inline-block'
+	$roomCreationElements.classList.add('roomCreationElements')
+	$inputRoomName.type = 'text'
+	$inputRoomName.name = 'inputRoomName'
+	$btnOk.textContent = 'Ok'
+	$btnOk.type = 'button'
+	$btnCancel.textContent = 'Cancel'
+	$btnCancel.type = 'button'
+
+	$roomCreationElements.append($inputRoomName)
+	$roomCreationElements.append($btnOk)
+	$roomCreationElements.append($btnCancel)
+	$formRooms.append($roomCreationElements)
+
+	$inputRoomName.focus()
+
+	$inputRoomName.addEventListener('keydown', (e) => {
+		if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+			submitRoomCreation($inputRoomName.value)
+		} else if (e.code === 'Escape') {
+			removeRoomCreationElements()
+		}
+	})
+
+	$btnOk.addEventListener('click', () => {
+		submitRoomCreation($inputRoomName.value)
+	})
+
+	$btnCancel.addEventListener('click', removeRoomCreationElements)
+
+	document.body.addEventListener('focusin', maybeHideRoomCreationElements)
+
+	function maybeHideRoomCreationElements(e) {
+		const target = e.target.closest('.roomCreationElements')
+		if (!target) {
+			removeRoomCreationElements()
+		}
+	}
+
+	function submitRoomCreation(roomName) {
+		if (!checkAppropriateRoomName(roomName)) {
+			console.log('Room creation failed!')
+			return
+		}
+		socket.emit('addNewRoom', roomName)
+		removeRoomCreationElements()
+	}
+
+	function removeRoomCreationElements() {
+		$formRooms.querySelector('div').remove()
+		$btn_add_room.style.display = 'inline'
+
+		document.body.removeEventListener('focusin', maybeHideRoomCreationElements)
+	}
+}
+
+function checkAppropriateRoomName(roomName) {
+	if (!roomName) return false
+
+	for (const option of $roomElem.children) {
+		if (option.textContent === roomName) {
+			return false
+		}
+	}
+
+	return true
+}

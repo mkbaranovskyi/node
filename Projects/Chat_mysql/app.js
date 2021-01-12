@@ -1,11 +1,12 @@
-'use strict'
 const http = require('http')
 const express = require('express')
 const app = express()
 const server = http.createServer(app)
 const io = require('socket.io')(server)
 const path = require('path')
-const mysql = require('mysql2')
+
+const SqlMethods = require('./js/SqlMethods')
+
 const multer = require('multer')
 const { check, matchedData, validationResult } = require('express-validator')
 const { pipeline } = require('stream/promises')
@@ -22,33 +23,64 @@ const storage = multer.diskStorage({
 })
 const upload = multer({ storage })
 
-const connection = mysql
-	.createConnection({
-		host: 'localhost',
-		user: 'root',
-		password: 'Rfgkzrfgkz',
-		database: 'Chat'
-	})
-	.promise()
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-io.on('connection', async (socket) => {
-	socket.on('chat messages', (msg) => {
-		console.log(socket.test)
+io.on('connection', (socket) => {
+	socket.on('getRooms', async () => {
+		const roomList = await SqlMethods.getRooms()
+		socket.emit('getRooms', roomList)
+	})
+
+	socket.on('postMessage', async (msg) => {
 		console.log(msg)
-		sqlInsertMessages(msg)
-		socket.broadcast.emit('chat messages', [msg])
+
+		const roomExists = await SqlMethods.checkRoomExists(msg.roomName)
+		if (!roomExists) {
+			console.log("Room doesn't exist!")
+			return
+		}
+
+		SqlMethods.insertMessage(msg)
+
+		socket.broadcast.emit('getMessages', [msg])
 	})
 
 	socket.on('disconnect', () => {
 		console.log('user disconnected')
 	})
 
-	socket.on('get messages', async (nextMessageId) => {
-		let chatHistory = await sqlGetMessages(nextMessageId)
+	socket.on('addNewRoom', async (roomName) => {
+		console.log(roomName)
+		const roomExists = await SqlMethods.checkRoomExists(roomName)
+		if (roomExists) {
+			console.log('The room already exists!')
+			socket.emit('roomRejected', {
+				roomName,
+				reason: 'This room already exists!'
+			})
+			return
+		}
+		await SqlMethods.createNewRoom(roomName)
+		await SqlMethods.addRoomToTheList(roomName)
+
+		socket.emit('roomCreated', roomName)
+		socket.emit('updateHistory', {
+			roomName,
+			nextMessageID: 0
+		})
+	})
+
+	socket.on('getMessages', async (options) => {
+		console.log(options)
+		const roomExists = await SqlMethods.checkRoomExists(options.roomName)
+		if (!roomExists) {
+			console.log("Room doesn't exist!")
+			return
+		}
+		let chatHistory = await SqlMethods.getMessages(options)
 		if (!chatHistory.length) {
+			console.log('No new messages!')
 			return
 		}
 
@@ -57,29 +89,18 @@ io.on('connection', async (socket) => {
 		chatHistory = chatHistory.map((record) => {
 			const { Username, Message, PostDate } = record
 			if (record.ID > maxID) maxID = record.ID
-			return { Username, Message, PostDate }
+			return { Username, Message, PostDate, roomName: options.roomName }
 		})
 
-		// console.log(chatHistory)
-		socket.emit('chat messages', chatHistory)
-		socket.emit('next id', maxID + 1)
+		console.log(chatHistory)
+
+		socket.emit('getMessages', chatHistory)
+		socket.emit('updateHistory', {
+			roomName: options.roomName,
+			nextMessageID: maxID + 1
+		})
 	})
 })
-
-async function sqlInsertMessages(body) {
-	const sql_params = [body.Username, body.Message]
-	const sql_query =
-		'INSERT Messages (Username, Message, PostDate) VALUES (?, ?, NOW())'
-	const sql_result = await connection.execute(sql_query, sql_params)
-	return sql_result
-}
-
-async function sqlGetMessages(nextMessageId) {
-	const sql_params = [nextMessageId]
-	const sql_query = 'SELECT * FROM Messages WHERE ID >= ?;'
-	const sql_result = await connection.execute(sql_query, sql_params)
-	return sql_result[0]
-}
 
 app.use(express.static(path.join(__dirname, 'public')))
 
