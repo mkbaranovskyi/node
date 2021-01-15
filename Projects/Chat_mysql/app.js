@@ -29,22 +29,6 @@ const upload = multer({ storage })
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
-const hash = crypto.createHash('sha256')
-const r = fs.createReadStream(
-	'James Kitcher & Adam Taylor - The Spirit Within-ZscCG-_WuH0.webm'
-)
-let data = []
-
-r.on('readable', () => {
-	let chunk
-	while ((chunk = r.read()) !== null) {
-		data.push(chunk)
-	}
-})
-r.on('end', () => {
-	console.log(hash.update(data.join('')).digest())
-})
-
 io.on('connection', (socket) => {
 	socket.on('getRooms', async () => {
 		const roomList = await SqlMethods.getRooms()
