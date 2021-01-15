@@ -4,6 +4,9 @@ const app = express()
 const server = http.createServer(app)
 const io = require('socket.io')(server)
 const path = require('path')
+const fs = require('fs')
+const validator = require('validator')
+const crypto = require('crypto')
 
 const SqlMethods = require('./js/SqlMethods')
 
@@ -26,6 +29,22 @@ const upload = multer({ storage })
 app.use(express.json())
 app.use(express.urlencoded({ extended: false }))
 
+const hash = crypto.createHash('sha256')
+const r = fs.createReadStream(
+	'James Kitcher & Adam Taylor - The Spirit Within-ZscCG-_WuH0.webm'
+)
+let data = []
+
+r.on('readable', () => {
+	let chunk
+	while ((chunk = r.read()) !== null) {
+		data.push(chunk)
+	}
+})
+r.on('end', () => {
+	console.log(hash.update(data.join('')).digest())
+})
+
 io.on('connection', (socket) => {
 	socket.on('getRooms', async () => {
 		const roomList = await SqlMethods.getRooms()
@@ -33,9 +52,7 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('postMessage', async (msg) => {
-		console.log(msg)
-
-		const roomExists = await SqlMethods.checkRoomExists(msg.roomName)
+		const roomExists = await SqlMethods.checkRoomExists(msg.optionValue)
 		if (!roomExists) {
 			console.log("Room doesn't exist!")
 			return
@@ -47,12 +64,13 @@ io.on('connection', (socket) => {
 	})
 
 	socket.on('disconnect', () => {
+		// User counter should be here
 		console.log('user disconnected')
 	})
 
 	socket.on('addNewRoom', async (roomName) => {
-		console.log(roomName)
-		const roomExists = await SqlMethods.checkRoomExists(roomName)
+		const roomHash = crypto.createHash('md5').update(roomName).digest('hex')
+		const roomExists = await SqlMethods.checkRoomExists(roomHash)
 		if (roomExists) {
 			console.log('The room already exists!')
 			socket.emit('roomRejected', {
@@ -61,23 +79,24 @@ io.on('connection', (socket) => {
 			})
 			return
 		}
-		await SqlMethods.createNewRoom(roomName)
-		await SqlMethods.addRoomToTheList(roomName)
+		await SqlMethods.createNewRoom(roomHash)
+		await SqlMethods.addRoomToTheList({ optionValue: roomHash, roomName })
 
-		socket.emit('roomCreated', roomName)
 		socket.emit('updateHistory', {
 			roomName,
+			optionValue: roomHash,
 			nextMessageID: 0
 		})
+		socket.emit('roomCreated', { roomName, optionValue: roomHash })
 	})
 
 	socket.on('getMessages', async (options) => {
-		console.log(options)
-		const roomExists = await SqlMethods.checkRoomExists(options.roomName)
+		const roomExists = await SqlMethods.checkRoomExists(options.optionValue)
 		if (!roomExists) {
 			console.log("Room doesn't exist!")
 			return
 		}
+
 		let chatHistory = await SqlMethods.getMessages(options)
 		if (!chatHistory.length) {
 			console.log('No new messages!')
@@ -89,14 +108,13 @@ io.on('connection', (socket) => {
 		chatHistory = chatHistory.map((record) => {
 			const { Username, Message, PostDate } = record
 			if (record.ID > maxID) maxID = record.ID
-			return { Username, Message, PostDate, roomName: options.roomName }
+			return { Username, Message, PostDate, optionValue: options.optionValue }
 		})
-
-		console.log(chatHistory)
 
 		socket.emit('getMessages', chatHistory)
 		socket.emit('updateHistory', {
 			roomName: options.roomName,
+			optionValue: options.optionValue,
 			nextMessageID: maxID + 1
 		})
 	})

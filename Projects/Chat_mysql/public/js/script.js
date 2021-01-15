@@ -15,11 +15,10 @@ socket.on('roomCreated', onRoomCreated)
 socket.on('roomRejected', onRoomRejected)
 
 $roomElem.addEventListener('change', (e) => {
-	console.log('Room Changed')
-	// Clear the chat history for the previous room
-	$chat_content.innerHTML = '' // Ask for messages for the current room
+	$chat_content.innerHTML = ''
+	updateURLAndTitle($roomElem.value)
 	socket.emit('getMessages', {
-		roomName: $roomElem.value,
+		optionValue: $roomElem.value,
 		nextMessageID: 0
 	})
 })
@@ -33,7 +32,7 @@ $formSend.addEventListener('submit', (e) => {
 		Username: $formSend.username.value,
 		Message: $formSend.message.value,
 		PostDate: new Date(),
-		roomName: $roomElem.value
+		optionValue: $roomElem.value
 	}
 
 	if (!message.Username || !message.Message) {
@@ -46,32 +45,23 @@ $formSend.addEventListener('submit', (e) => {
 	renderMessages([message])
 })
 
-function renderRoom(roomName) {
+function renderRoom(room) {
 	const option = document.createElement('option')
-	option.value = roomName
-	option.textContent = roomName
+	option.value = room.optionValue
+	option.textContent = room.roomName
 	option.selected = true
 	$roomElem.append(option)
 }
 
 function renderAllRooms(roomList) {
 	$roomElem.innerHTML = ''
-	roomList.sort()
-	roomList.forEach((roomName) => renderRoom(roomName))
-
-	// Optional: made `Common` the default selected room
-	if (roomList.includes('Common')) {
-		for (const option of $roomElem.children) {
-			if (option.textContent === 'Common') {
-				option.selected = true
-				break
-			}
-		}
-	}
+	// roomList.sort()
+	roomList.forEach((room) => renderRoom(room))
 }
 
 function updateHistory(options) {
-	messagesHistory.set(options.roomName, options.nextMessageID)
+	console.log(options)
+	messagesHistory.set(options.optionValue, options.nextMessageID)
 }
 
 function renderMessages(messages) {
@@ -79,7 +69,7 @@ function renderMessages(messages) {
 		let date = new Date(message.PostDate.toString())
 		date = date.toLocaleString()
 
-		if (message.roomName !== $roomElem.value) {
+		if (message.optionValue !== $roomElem.value) {
 			return
 		}
 
@@ -115,6 +105,7 @@ function addNewRoom() {
 
 	$inputRoomName.addEventListener('keydown', (e) => {
 		if (e.code === 'Enter' || e.code === 'NumpadEnter') {
+			e.preventDefault() // Without this, Enter will submit the form
 			submitRoomCreation($inputRoomName.value)
 		} else if (e.code === 'Escape') {
 			removeRoomCreationElements()
@@ -163,4 +154,13 @@ function checkAppropriateRoomName(roomName) {
 	}
 
 	return true
+}
+
+function updateURLAndTitle(optionValue) {
+	history.pushState(
+		{},
+		'',
+		`${window.location.origin}?room=${optionValue.toLowerCase()}`
+	)
+	document.title = `Chat | ${optionValue}`
 }

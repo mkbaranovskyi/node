@@ -1,18 +1,29 @@
 async function onConnect() {
-	console.log('Connect')
 	socket.emit('getRooms')
 }
 
 async function onGetRooms(roomList) {
 	renderAllRooms(roomList)
 	// By default we want all messages from the start
-	roomList.forEach((roomName) => {
-		updateHistory({ roomName, nextMessageID: 0 })
+	roomList.forEach((room) => {
+		const { optionValue } = room
+		updateHistory({ optionValue, nextMessageID: 0 })
 	})
 
-	// When we have the list of rooms, ask for messages for the current room immediately
+	// The if user required a specific room in the URL (and we have it) - switch to it
+	const params = new URLSearchParams(window.location.search)
+	for (const room of roomList) {
+		if (room.optionValue.toLowerCase() === params.get('room')) {
+			$roomElem.value = params.get('room')
+			break
+		}
+	}
+
+	updateURLAndTitle($roomElem.value)
+
+	console.log(messagesHistory)
 	socket.emit('getMessages', {
-		roomName: $roomElem.value,
+		optionValue: $roomElem.value,
 		nextMessageID: messagesHistory.get($roomElem.value)
 	})
 }
@@ -25,9 +36,10 @@ function onUpdateHistory(options) {
 	updateHistory(options)
 }
 
-function onRoomCreated(roomName) {
-	renderRoom(roomName)
+function onRoomCreated(room) {
+	renderRoom(room)
 	$chat_content.innerHTML = ''
+	updateURLAndTitle($roomElem.value)
 }
 
 function onRoomRejected(options) {
