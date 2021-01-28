@@ -4,26 +4,26 @@ const server = require('http').createServer(app)
 const path = require('path')
 const io = require('socket.io')(server)
 const PORT = process.env.PORT || 5000
+const crypto = require('crypto')
 
 const Sequelize = require('sequelize')
+const { Op, QueryTypes, Model } = require('sequelize')
 const sequelize = new Sequelize('Sport', 'root', 'Rfgkzrfgkz', {
 	dialect: 'mysql',
 	host: 'localhost',
-	// port: 5000,
 	define: {
-		timestamps: false,
-		freezeTableName: false
+		timestamps: true
 	}
 })
 
-const Student = sequelize.define('student', {
+const Student = sequelize.define('Student', {
 	name: {
 		type: Sequelize.STRING,
 		allowNull: false
 	}
 })
 
-const Subject = sequelize.define('subject', {
+const Subject = sequelize.define('Subject', {
 	name: {
 		type: Sequelize.STRING,
 		allowNull: false
@@ -31,9 +31,8 @@ const Subject = sequelize.define('subject', {
 })
 
 // Connecting model
-const Enrolment = sequelize.define('enrolment', {
+const Enrolment = sequelize.define('Enrolment', {
 	grade: {
-		// оценка студента по данному курсу
 		type: Sequelize.INTEGER,
 		allowNull: false
 	},
@@ -53,9 +52,7 @@ run()
 
 async function run() {
 	try {
-		// Recreate our tables according to our models
-		await sequelize.sync({ force: true, match: /Spo$/ })
-
+		await sequelize.sync({ force: true })
 		await Subject.create({ name: 'JavaScript' })
 		const ts = await Subject.create({ name: 'TypeScript' })
 		await Subject.create({ name: 'Node.js' })
