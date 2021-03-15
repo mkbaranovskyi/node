@@ -1,0 +1,24 @@
+{
+  "name": "kravich",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js",
+    "server": "nodemon app.js",
+    "client": "npm run start --prefix chat-rooms",
+    "dev": "concurrently \"npm run server\" \"npm run client\""
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "concurrently": "^6.0.0",
+    "express": "^4.17.1",
+    "g": "^2.0.1",
+    "mongoose": "^5.11.4",
+    "nodemon": "^2.0.6",
+    "socket.io": "^3.0.3"
+  }
+}
