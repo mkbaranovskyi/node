@@ -8,6 +8,8 @@ const { connection, Schema, Model, Document } = mongoose
 
 mongoose.connect('mongodb://localhost:27017/test', { useNewUrlParser: true, useUnifiedTopology: true })
 
+mongoose.set('useCreateIndex', true)
+
 connection.on('error', console.error.bind(console, 'connection error:'))
 connection.once('open', () => {
 	console.log('Connected!')
@@ -15,12 +17,20 @@ connection.once('open', () => {
 
 const userSchema = new Schema(
 	{
-		name: String,
-		age: Number,
+		name: {
+			type: String,
+			uppercase: true
+		},
+		age: {
+			type: Number,
+			index: true
+		},
 		gender: String
 	},
 	{ versionKey: false }
 )
+
+userSchema.index({ age: -1, name: 1 })
 
 const User = mongoose.model('User', userSchema)
 
@@ -28,10 +38,12 @@ run()
 
 async function run() {
 	try {
-		const result = await User.insertMany([
-			{ name: 'max', age: 20 },
-			{ name: 'user', age: NaN } // Error -> NOTHING will be inserted
-		])
+		await User.create({ name: 'Vlad', age: 20 })
+		await User.create({ name: 'Vlad', age: 20 })
+		await User.create({ name: 'Vlad', age: 20 })
+
+		// const result = await User.deleteMany({ name: 'Vlad' }, { name: 'Vladik' })
+		// console.log(result)
 	} catch (err) {
 		console.error(err)
 		mongoose.disconnect()
