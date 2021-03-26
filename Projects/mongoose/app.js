@@ -4,50 +4,71 @@ const server = require('http').createServer(app)
 const PORT = process.env.PORT || 5000
 
 const mongoose = require('mongoose')
-const { connection, Schema, Model, Document } = mongoose
+const { runInContext } = require('vm')
+const { connection, Schema } = mongoose
 
-mongoose.connect('mongodb://localhost:27017/test', { useNewUrlParser: true, useUnifiedTopology: true })
-
+mongoose.set('debug', true)
+mongoose.set('useFindAndModify', false)
 mongoose.set('useCreateIndex', true)
 
-connection.on('error', console.error.bind(console, 'connection error:'))
+const dbURI = 'mongodb://localhost:27017/test'
+const connectionOptions = {
+	useNewUrlParser: true,
+	useUnifiedTopology: true
+}
+
+connection.on('connecting', () => {
+	console.log('Connecting to MongoDB...')
+})
+connection.on('connected', () => {
+	console.log('MongoDB connected!')
+})
 connection.once('open', () => {
-	console.log('Connected!')
+	console.log('MongoDB connection opened!')
+})
+connection.on('reconnected', () => {
+	console.log('MongoDB reconnected!')
+})
+connection.on('disconnected', () => {
+	console.log('MongoDB disconnected!')
+	tryConnectingToDB()
+})
+connection.on('error', (error) => {
+	console.error('Error in MongoDb connection: ' + error)
+	mongoose.disconnect()
 })
 
-const userSchema = new Schema(
-	{
-		name: {
-			type: String,
-			uppercase: true
-		},
-		age: {
-			type: Number,
-			index: true
-		},
-		gender: String
-	},
-	{ versionKey: false }
-)
+process.on('SIGINT', () => {
+	mongoose.connection.close(function () {
+		console.log('Mongoose default connection is disconnected due to application termination')
+		process.exit(0)
+	})
+})
 
-userSchema.index({ age: -1, name: 1 })
+tryConnectingToDB()
 
-const User = mongoose.model('User', userSchema)
-
-run()
-
-async function run() {
+function tryConnectingToDB() {
 	try {
-		await User.create({ name: 'Vlad', age: 20 })
-		await User.create({ name: 'Vlad', age: 20 })
-		await User.create({ name: 'Vlad', age: 20 })
-
-		// const result = await User.deleteMany({ name: 'Vlad' }, { name: 'Vladik' })
-		// console.log(result)
+		mongoose.connect(dbURI, connectionOptions, (err) => {
+			if (err) console.error(err)
+			server.listen(PORT)
+		})
 	} catch (err) {
-		console.error(err)
-		mongoose.disconnect()
+		console.log(err)
 	}
 }
 
-server.listen(PORT)
+const childSchema = new Schema({ name: 'string' })
+
+const parentSchema = new Schema({
+	children: [childSchema] /* array of subdocuments */,
+	child: childSchema /* single nested subdocument */
+})
+
+const Parent = mongoose.model('Parent', parentSchema)
+
+const parent = new Parent({ children: [{ name: 'Matt' }, { name: 'Sarah' }] })
+parent.children[0].name = 'Matthew'
+
+// `parent.children[0].save()` is a no-op. You need to save the parent document
+parent.save()
