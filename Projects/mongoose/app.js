@@ -3,8 +3,8 @@ const app = express()
 const server = require('http').createServer(app)
 const PORT = process.env.PORT || 5000
 
+const validator = require('validator')
 const mongoose = require('mongoose')
-const { runInContext } = require('vm')
 const { connection, Schema } = mongoose
 
 mongoose.set('debug', true)
@@ -58,17 +58,82 @@ function tryConnectingToDB() {
 	}
 }
 
-const childSchema = new Schema({ name: 'string' })
+// ===== Schema =====
 
-const parentSchema = new Schema({
-	children: [childSchema] /* array of subdocuments */,
-	child: childSchema /* single nested subdocument */
+const userSchema = new Schema(
+	{
+		name: {
+			type: String,
+			required: true,
+			trim: true, // bjilt-in sanitizer
+			minLength: 1, // built-in validator
+			maxLength: 32
+		},
+		email: {
+			type: String,
+			required: true,
+			lowercase: true,
+			trim: true,
+			validate(value) {
+				// custom validator
+				if (!validator.isEmail(value)) {
+					throw new Error('Please provide a correct email')
+				}
+			}
+		},
+		password: {
+			type: String,
+			required: true,
+			trim: true,
+			minLength: 8,
+			validate(value) {
+				if (value.toLowerCase().includes('password')) {
+					throw new Error("Don't use weak passwords!")
+				}
+			}
+		},
+		age: {
+			type: Number,
+			min: 0
+		},
+		phone: {
+			type: Number,
+			trim: true,
+			validate(value) {
+				if (!validator.isMobilePhone(value)) {
+					throw new Error('Please provide the correct phone number!')
+				}
+			}
+		}
+	},
+	{ versionKey: false }
+)
+
+userSchema.virtual('fullName').get(function () {
+	return `${this.name}, ${this.age} years`
 })
 
-const Parent = mongoose.model('Parent', parentSchema)
+userSchema.virtual('fullName').set(function (name) {
+	const str = name.split(' ')
+	this.firstName = str[0]
+	this.lastName = str[1]
+})
 
-const parent = new Parent({ children: [{ name: 'Matt' }, { name: 'Sarah' }] })
-parent.children[0].name = 'Matthew'
+const User = mongoose.model('User', userSchema)
 
-// `parent.children[0].save()` is a no-op. You need to save the parent document
-parent.save()
+run()
+async function run() {
+	try {
+		const user = await User.create({ name: 'U', email: 'max@bar.king', password: 'L_54Jsfle74K' })
+
+		user.fullName = 'Thomas Anderson'
+		console.log(user.fullName)
+		console.log(user)
+
+		await User.updateMany({ email: 'max@bar.king' }, { name: 'You' })
+
+		await User.find().sort({ $natural: -1 }).limit(1)
+	} catch (err) {
+		console.error(err)
+	}
+}
