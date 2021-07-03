@@ -17,6 +17,22 @@ const connectionOptions = {
 	useUnifiedTopology: true
 }
 
+// start
+const MongoClient = require('mongodb').MongoClient
+const uri =
+	'mongodb+srv://max:Rfgkzrfgkz1997@maxcluster.yvvzb.mongodb.net/test?retryWrites=true&w=majority'
+const client = new MongoClient(uri, {
+	useNewUrlParser: true,
+	useUnifiedTopology: true
+})
+client.connect((err) => {
+	const collection = client.db('test')
+
+	// perform actions on the collection object
+	// client.close()
+})
+// end
+
 connection.on('connecting', () => {
 	console.log('Connecting to MongoDB...')
 })
@@ -40,7 +56,9 @@ connection.on('error', (error) => {
 
 process.on('SIGINT', () => {
 	mongoose.connection.close(function () {
-		console.log('Mongoose default connection is disconnected due to application termination')
+		console.log(
+			'Mongoose default connection is disconnected due to application termination'
+		)
 		process.exit(0)
 	})
 })
@@ -124,7 +142,11 @@ const User = mongoose.model('User', userSchema)
 run()
 async function run() {
 	try {
-		const user = await User.create({ name: 'U', email: 'max@bar.king', password: 'L_54Jsfle74K' })
+		const user = await User.create({
+			name: 'U',
+			email: 'max@bar.king',
+			password: 'L_54Jsfle74K'
+		})
 
 		user.fullName = 'Thomas Anderson'
 		console.log(user.fullName)
