@@ -1,0 +1,13 @@
+version: "3.8"
+services:
+  api:
+    image: test
+    build:
+      context: ./
+      dockerfile: dockerfile
+      # target: production
+    ports:
+      - 5000:3000
+      - 9229:9229
+    volumes: 
+      - ./:/app
