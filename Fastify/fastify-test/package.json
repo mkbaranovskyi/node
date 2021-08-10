@@ -1,0 +1,22 @@
+{
+  "name": "fastify-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "dependencies": {
+    "fastify": "^3.20.1",
+    "fastify-swagger": "^4.8.4",
+    "nanoid": "^3.1.23"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.12"
+  },
+  "scripts": {
+    "start": "node src/server",
+    "dev": "nodemon src/server"
+  },
+  "type": "commonjs",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
