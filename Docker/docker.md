@@ -73,6 +73,15 @@ Show images
 docker images
 ```
 
+Delete unused images. Also can read [this](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes-ru)
+
+```bash
+docker image prune
+
+# Alternatively, something like 
+# docker rmi $(docker images -a -q)
+```
+
 Stop/restart the **Container** (take the name in the end from `docker ps`)
 
 ```bash
@@ -212,3 +221,31 @@ Replaces multiple `docker build` and `docker run` commands with a **config file*
 Use the `docker.compose.yml` (`yaml`) file to configure your application’s services. 
 
 Then, with a single command, you create and start all the services from your configuration.
+
+```bash
+docker-compose up
+docker-compose stop
+docker-compose restart
+docker-compose down
+
+# Rebuild the container
+docker-compose up --build -V 
+
+# Rebuild an `api` service
+docker-compose up --build -V api
+
+# Without logs
+docker-compose up --build -d -V api
+
+# Also with container names / id
+```
+
+My commands:
+
+```bash
+# 1. Build `mongo` and `mongo-express` containers
+docker-compose up -d mongo mongo-express
+
+# 2. Rebuild and start `api` service (and other services if you have any)
+docker-compose up --build -V api
+```
