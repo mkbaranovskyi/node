@@ -249,3 +249,14 @@ docker-compose up -d mongo mongo-express
 # 2. Rebuild and start `api` service (and other services if you have any)
 docker-compose up --build -V api
 ```
+
+---
+
+
+## Development vs Production
+
+We create 2 files:
+
+- `docker-compose.yml` - 
+- `docker-compose.override.yml` - 
+
