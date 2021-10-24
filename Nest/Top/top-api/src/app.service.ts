@@ -1,13 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { OneService } from './one/one.service'
+import { Injectable } from '@nestjs/common'
 
 @Injectable()
 export class AppService {
-  constructor(
-    private readonly oneService: OneService,
-  ) {}
-  
-  count(){
-    this.oneService.one()
-  }
+  constructor(  ) {}
 }
