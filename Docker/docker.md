@@ -10,24 +10,25 @@
 
 ### Intro
 
-You should have a `Dockerfile` file (the actual file name) in your project. It stores a set of commands.
+Normally you'll have a `Dockerfile` in your project. It stores instructions for building your Docker image.
 
 Example of `Dockerfile`:
 
 ```dockerfile
-FROM node:14
-
-WORKDIR /app
-
-COPY package.json .
-
+# The name of the image (local or on hub.docker.com)
+FROM node
+# Path IN THE CONTAINER where most of the subsequent commands will be executed
+WORKDIR /app  
+# Copy everything from the current local directory to the `/app` folder IN THE CONTAINER 
+COPY package.json /app
+# Execute when a container is CREATED
 RUN npm i
-
+# Copy everything else - our code
 COPY . .
-
-EXPOSE 5000
-
-CMD ["node", "app.mjs"]
+# Optional parameter showing what ports will be used inside the image - doesn't do anything in practice
+EXPOSE 80
+# Execute when a container based on this image is STARTED
+CMD ["node", "index"]
 ```
 
 1. **Build the Image**
@@ -40,7 +41,7 @@ docker build . -t test
 2. **Create and start a new Container** over the specified Image **in the attached mode** by default (meaning we're listening to the output of that container). Copy the generated `id` at the bottom of the output (e.g. `a76adbaedb79`) and type
 
 ```bash
-docker run -it --init -p 5000:5000 40ed76e52694
+docker run -it --init -p 5000:80 40ed76e52694
 
 # `-it`: interactive
 # `-p`: local port (in the browser):exposed port (in the app)
@@ -52,6 +53,8 @@ Your server should be running.
 
 ---
 
+#### Images are read-only!
+
 To **apply your changes in the code**, restarting a Container is not enough. Remember that your code is **getting copied** into the Image. So it's basically a **snapshot**.
 
 We need to **rebuild** our code into a new Image. So steps `1.` and `2.` over again.
@@ -60,50 +63,26 @@ We need to **rebuild** our code into a new Image. So steps `1.` and `2.` over ag
 
 ### Utility commands
 
-Show processes
-
 ```bash
-docker ps
-docker ps -a
-```
-
-Show images
-
-```bash
-docker images
+docker ps     # running containers
+docker ps -a  # all containers (including stopped ones)
+docker images # images
 ```
 
 Delete unused images. Also can read [this](https://www.digitalocean.com/community/tutorials/how-to-remove-docker-images-containers-and-volumes-ru)
 
 ```bash
-docker image prune
+docker system prune
 
 # Alternatively, something like 
 # docker rmi $(docker images -a -q)
-```
 
-Stop/restart the **Container** (take the name in the end from `docker ps`)
+docker stop relaxed_poitras   # stop the container by ID or name
+docker start bbf462dce545     # start the container
+docker kill bbf462dce545      # kill the container
 
-```bash
-docker stop relaxed_poitras
-
-# Starts in the detached mode by default
-docker start
-```
-
-Kill the Container (take the id from `docker ps`)
-
-```bash
-docker kill bbf462dce545
-```
-
-See logs
-
-```bash
-docker logs amazing_chaplygin
-
-# Start a previously stopped Container && see the logs
-docker start amazing_chaplygin && docker logs amazing_chaplygin -f
+docker logs amazing_chaplygin -f  # show logs (-f = follow)
+docker start amazing_chaplygin && docker logs amazing_chaplygin -f  # Start a previously stopped Container && see the logs
 ```
 
 ---
@@ -112,9 +91,9 @@ docker start amazing_chaplygin && docker logs amazing_chaplygin -f
 
 A **single Image** usually contains **multiple Containers**.
 
-Image is a **template** that contains the code / tools / runtimes.
+Image is a **template** that contains the code / tools / runtimes. 
 
-Container runs and execudes the code.
+Container runs and execudes the code. The code is stored in the image **once** and is **shared** among the containers in that image.
 
 ---
 
@@ -122,32 +101,23 @@ Container runs and execudes the code.
 
 ```dockerfile
 # Provide a template for your Image
-# The name should be either installed locally under that name or to exist on `hub.docker`
-
-# Path to the working directory in the Container where all the commands (e.g. COPY) will be executed
-
-WORKDIR /app
-
+# The name should be either installed locally under that name or to exist on `hub.docker.com`
 FROM node:14
-
+# Path to the working directory in the Container where all the commands (e.g. COPY) will be executed
+WORKDIR /app
 # Tells Docker what files and folders to copy to the Image
 # arg1: copy from the current local folder
 # arg2: copy to the selected Image folder; `./` and `/app` will be the same in this context
-
 COPY . /app
-
-# Runs some commands when the Image is created
-
+# Runs some commands when an Image is created
 RUN npm i
-
-# Runs some commands when a Container is created
-
+# Runs some commands when a Container starts
 CMD ["node", "app.mjs"]
-
-# Exposes a certain port from a Container to our local machine
 ```
 
 Each command is a **layer** and is getting executed from top to bottom. They are also getting **cached** - you can see that by running `docker build .` multiple times - the subsequent ones run much faster.
+
+If any layer changes, **all layers after it re-run as well and don't use cached results** as they can't be sure the result will be the same anymore.
 
 The last layer is getting added once your `CMD` command runs. This step is done by Container.
 
@@ -169,7 +139,7 @@ EXPOSE 80
 CMD ["node", "app.mjs"]
 ```
 
-Now we copy our code to the Image **after** all the dependencies are set, so the layers above **don'e re-run**.
+Now we copy our code to the Image **after** all the dependencies are set, so the layers above **don't re-run**.
 
 ---
 
@@ -177,8 +147,8 @@ Now we copy our code to the Image **after** all the dependencies are set, so the
 
 Attached mode translates the Container output to the console automatically.
 
-- `docker run` is using the **attached** (`-a` key) mode by default
-- `docker start` is using the **detached** (`-d` key) mode by default
+- `docker run` is using the **attached** (`-a`) mode by default
+- `docker start` is using the **detached** (`-d`) mode by default
 
 Use `docker attach dreamy_hugle` to attach to the running Container.
 

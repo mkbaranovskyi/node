@@ -1,13 +1,7 @@
-FROM node:14
-
-WORKDIR /home/node/backend
-
-COPY package.json /app
-
-RUN npm i
-
+FROM node
+WORKDIR /app
 COPY . /app
-
-EXPOSE 80
-
-CMD ["node", "app.mjs"]
+RUN npm i
+# COPY . /app
+# EXPOSE 5000
+CMD ["node", "src/index"]
