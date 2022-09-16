@@ -17,6 +17,8 @@ import { LoggerMiddleware } from './shared/middleware';
       database: 'postgres',
       autoLoadEntities: true,
       synchronize: true, // TODO: set to false in production!
+      entities: ['dist/**/*.entity.js'],
+      migrations: ['dist/shared/database/migrations/*.js'],
     }),
   ],
   controllers: [AppController],

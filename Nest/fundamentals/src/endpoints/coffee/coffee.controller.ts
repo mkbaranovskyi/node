@@ -1,20 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, UseInterceptors, UsePipes } from '@nestjs/common';
-import { AuthGUard } from 'src/shared/guards';
-import { TransformInterceptor } from "src/shared/interceptors";
-import { ValidationPipe } from 'src/shared/pipes/custom-validation.pipe';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, ValidationPipe } from '@nestjs/common';
+import { PaginationDto } from "src/shared/dto";
 import { CoffeeService } from './coffee.service';
-import { CreateCoffeeDto } from './dto/create-coffee.dto';
-import { UpdateCoffeeDto } from './dto/update-coffee.dto';
+import { CreateCoffeeDto, UpdateCoffeeDto } from './dto';
 
 @Controller('coffee')
-@UsePipes(ValidationPipe)
-@UseInterceptors(TransformInterceptor)
-@UseGuards(AuthGUard)
 export class CoffeeController {
   constructor(private readonly coffeeService: CoffeeService) { }
 
   @Get()
-  async findMany(@Query() paginationInput) {
+  async findMany(@Query() paginationInput: PaginationDto) {
     const result = await this.coffeeService.findMany(paginationInput);
     return result;
   }
@@ -40,6 +34,12 @@ export class CoffeeController {
   @Delete(':id')
   async remove(@Param('id') id: number) {
     const result = await this.coffeeService.remove(id);
+    return result;
+  }
+
+  @Patch(':id/recommend')
+  async recommend(@Param('id') id: number) {
+    const result = await this.coffeeService.recommendCoffee(id);
     return result;
   }
 }
