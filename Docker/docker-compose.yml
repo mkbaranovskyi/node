@@ -1,0 +1,9 @@
+services:
+  postgres:
+    image: postgres:14
+    volumes:
+        - /var/lib/postgres
+    environment:
+        POSTGRES_DB: project
+        POSTGRES_USER: project
+        POSTGRES_PASSWORD: project

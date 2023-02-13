@@ -5032,10 +5032,10 @@
   "resolved" "https://registry.npmjs.org/typedarray/-/typedarray-0.0.6.tgz"
   "version" "0.0.6"
 
-"typeorm@^0.3.0", "typeorm@^0.3.9":
-  "integrity" "sha512-xNcE44D4hn74n7pjuMog9hRgep+BiO3IBpjEaQZ8fb56zsDz7xHT1GAeWwmGuuU+4nDEELp2mIqgSCR+zxR7Jw=="
-  "resolved" "https://registry.npmjs.org/typeorm/-/typeorm-0.3.9.tgz"
-  "version" "0.3.9"
+"typeorm@^0.3.0", "typeorm@^0.3.10":
+  "integrity" "sha512-VMKiM84EpJQ+Mz9xDIPqnfplWhyUy1d8ccaKdMY9obifxJOTFnv8GYVyPsGwG8Lk7Nb8MlttHyHWENGAhBA3WA=="
+  "resolved" "https://registry.npmjs.org/typeorm/-/typeorm-0.3.10.tgz"
+  "version" "0.3.10"
   dependencies:
     "@sqltools/formatter" "^1.2.2"
     "app-root-path" "^3.0.0"
