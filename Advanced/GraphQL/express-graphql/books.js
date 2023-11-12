@@ -1,6 +1,38 @@
 const { GraphQLSchema, GraphQLObjectType, GraphQLString, GraphQLList, GraphQLInt, GraphQLNonNull } = require('graphql');
 const { authors, books } = require('./data/book-data');
 
+const RootMutationType = new GraphQLObjectType({
+  name: 'Mutation',
+  description: 'Root Mutation (you will see this in the docs)',
+  fields: () => ({
+    addBook: {
+      type: BookType,
+      description: 'Add a book',
+      args: {
+        name: { type: GraphQLNonNull(GraphQLString) },
+        authorId: { type: GraphQLNonNull(GraphQLInt) },
+      },
+      resolve: (parent, args) => {
+        const book = { id: books.length + 1, name: args.name, authorId: args.authorId };
+        books.push(book);
+        return book;
+      },
+    },
+    addAuthor: {
+      type: AuthorType,
+      description: 'Add an author',
+      args: {
+        name: { type: GraphQLNonNull(GraphQLString) },
+      },
+      resolve: (parent, args) => {
+        const author = { id: authors.length + 1, name: args.name };
+        authors.push(author);
+        return author;
+      },
+    },
+  }),
+});
+
 const AuthorType = new GraphQLObjectType({
   name: 'Author',
   description: 'This represents an author of a book',
@@ -28,7 +60,7 @@ const BookType = new GraphQLObjectType({
   }),
 });
 
-const RootQuetyType = new GraphQLObjectType({
+const RootQueryType = new GraphQLObjectType({
   name: 'Query',
   description: "Root Query (you'll see this in the docs)",
   fields: () => ({
@@ -71,7 +103,8 @@ const RootQuetyType = new GraphQLObjectType({
 });
 
 const schema = new GraphQLSchema({
-  query: RootQuetyType,
+  query: RootQueryType,
+  mutation: RootMutationType,
 });
 
 module.exports = { bookSchema: schema };

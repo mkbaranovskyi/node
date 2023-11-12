@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "rootDirs": ["src"],
+    "outDir": "./dist",
+    "lib": ["ES2023"],
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "types": ["node"],
+  }
+}

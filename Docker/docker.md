@@ -53,6 +53,36 @@ Your server should be running.
 
 ---
 
+Mongo and mongo-express:
+
+```bash
+# Create network
+docker network create mongo-network
+
+# Mongo
+docker run -d \
+-p 27017:27017 \
+-e MONGO_INITDB_ROOT_USERNAME=admin \
+-e MONGO_INITDB_ROOT_PASSWORD=password \
+--name mongodb \
+--net mongo-network \
+mongo
+
+# Mongo-express
+docker run -d \
+-p 8081:8081 \
+-e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \
+-e ME_CONFIG_MONGODB_ADMINPASSWORD=password \
+--net mongo-network \
+--name mongo-express \
+-e ME_CONFIG_MONGODB_SERVER=mongodb \
+mongo-express
+```
+
+![Alt text](./img/image1.png)
+
+---
+
 #### Images are read-only!
 
 To **apply your changes in the code**, restarting a Container is not enough. Remember that your code is **getting copied** into the Image. So it's basically a **snapshot**.
@@ -143,6 +173,18 @@ Now we copy our code to the Image **after** all the dependencies are set, so the
 
 ---
 
+### Networks
+
+Images inside a container can communicate by names if they are within the same network - it's convenient.
+
+```bash
+docker network ls
+
+docker network create mongo-network
+```
+
+---
+
 ### Attached and detached mode
 
 Attached mode translates the Container output to the console automatically.
@@ -188,6 +230,8 @@ CMD ["node", "lib/server"]
 
 Replaces multiple `docker build` and `docker run` commands with a **config file** to start all that services.
 
+When you use `docker compose`, the network is created automatically.
+
 Use the `docker.compose.yml` (`yaml`) file to configure your application’s services. 
 
 Then, with a single command, you create and start all the services from your configuration.
@@ -227,6 +271,10 @@ docker-compose up --build -V api
 
 We create 2 files:
 
-- `docker-compose.yml` - 
-- `docker-compose.override.yml` - 
+- `docker-compose.yml` - for production
+- `docker-compose.override.yml` - for development
+
+---
+
+
 
