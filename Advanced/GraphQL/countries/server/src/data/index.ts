@@ -71,7 +71,7 @@ export const MovieList = [
   {
     id: 2,
     title: 'Interstellar',
-    yearOfPublication: 2007,
+    yearOfPublication: 2014,
     isInTheaters: true,
   },
   {

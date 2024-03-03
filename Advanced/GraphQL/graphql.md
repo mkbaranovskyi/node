@@ -8,6 +8,8 @@
     - [Mutations](#mutations)
   - [Apollo](#apollo)
     - [Arguments](#arguments)
+  - [Apollo Client (React)](#apollo-client-react)
+    - [`useQuery`](#usequery)
 
 ---
 
@@ -247,3 +249,23 @@ export default {
 ```
 
 ![](./img/args-1.png)
+
+---
+
+## Apollo Client (React)
+
+```bash
+npm i @apollo/client
+```
+
+```ts
+
+```
+
+### `useQuery`
+
+Fetches data when the component is rendered. It returns an object with the following properties:
+
+- `data`: the data returned from the server
+- `loading`: a boolean that indicates if the request is still in progress
+

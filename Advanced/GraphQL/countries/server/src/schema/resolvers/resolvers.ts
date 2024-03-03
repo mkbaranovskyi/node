@@ -24,7 +24,7 @@ export default {
       return user;
     },
 
-    updateUser: (parent, args) => {G
+    updateUser: (parent, args) => {
       const { id, input } = args;
       const user = UserList.find((user) => user.id === Number(id));
       if (!user) {

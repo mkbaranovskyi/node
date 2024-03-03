@@ -7,7 +7,7 @@ exports.UserList = [
         name: 'John',
         username: 'john',
         age: 20,
-        nationality: null,
+        nationality: 'CANADA',
         friends: [
             {
                 id: 2,
@@ -66,25 +66,25 @@ exports.UserList = [
 exports.MovieList = [
     {
         id: 1,
-        name: 'Avengers Endgame',
+        title: 'Avengers Endgame',
         yearOfPublication: 2019,
         isInTheaters: true,
     },
     {
         id: 2,
-        name: 'Interstellar',
-        yearOfPublication: 2007,
+        title: 'Interstellar',
+        yearOfPublication: 2014,
         isInTheaters: true,
     },
     {
         id: 3,
-        name: 'Superbad',
+        title: 'Superbad',
         yearOfPublication: 2009,
         isInTheaters: true,
     },
     {
         id: 4,
-        name: 'PedroTech The Movie',
+        title: 'PedroTech The Movie',
         yearOfPublication: 2035,
         isInTheaters: false,
     },
