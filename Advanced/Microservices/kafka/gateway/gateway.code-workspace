@@ -1,0 +1,17 @@
+{
+  "folders": [
+	{
+		"name": "gateway",
+		"path": "."
+	},
+	{
+		"name": "auth",
+		"path": "../auth"
+	},
+	{
+		"name": "billing",
+		"path": "../billing"
+	}
+],
+  "settings": {}
+}

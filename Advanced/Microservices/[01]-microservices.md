@@ -3,6 +3,9 @@
 - [MIcroservices](#microservices)
   - [Monolithic vs Microservices](#monolithic-vs-microservices)
   - [Nest](#nest)
+    - [`./nest-example` project](#nest-example-project)
+  - [Kafka](#kafka)
+    - [`./kafka` project](#kafka-project)
 
 ---
 
@@ -24,4 +27,16 @@ If one of the services fails - only that service fails, the rest of the applicat
 
 ## Nest
 
-See the `nest-example` sample project. It's based on [this](https://youtu.be/C250DCwS81Q?si=-3CpNUCDdCoiB48n) video with minor adjustments.
+### `./nest-example` project
+
+This example project is based on [this](https://youtu.be/C250DCwS81Q?si=-3CpNUCDdCoiB48n) video.
+
+---
+
+## Kafka
+
+### `./kafka` project
+
+This example project is based on [this](https://youtu.be/JJEKPqSlXvk?si=-U92G9EfsWJwFd7H) video.
+
+In the `kafdrop` folder we have a `docker-compose.yml` file that will start a Kafka and Kafdrop containers. Open `localhost:9000` to see the Kafka UI.
