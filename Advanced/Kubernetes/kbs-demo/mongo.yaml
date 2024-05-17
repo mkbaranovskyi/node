@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  # Deployment
+  name: mongo-deployment
+  labels:
+    app: mongo
+spec:
+  replicas: 1
+  selector:
+    # All pods that match this label belong to the delopyment above
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  # References the metadata name of the secret
+                  name: mongo-secret
+                  key: mongo-user
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: mongo-password
+          # resources:
+          #   limits:
+          #     cpu: '1'
+          #     memory: '1Gi'
+          #   requests:
+          #     cpu: '0.5'
+          #     memory: '512Mi'
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo-service
+spec:
+  # This selector matches the label in the deployment above as Service forwards traffic to the pods
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      # Can be any but for simplicity, we use the same port
+      port: 27017
+      # To which port the traffic is forwarded to, so mush bamtch the containerPort in the deployment above
+      targetPort: 27017

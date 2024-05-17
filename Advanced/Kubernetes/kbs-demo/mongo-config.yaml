@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongo-config # Referenced in webapp.yaml
+data:
+  # Matches the service name in mongo.yaml
+  # Matches the DB_URL key in webapp.yaml
+  mongo-url: mongo-service

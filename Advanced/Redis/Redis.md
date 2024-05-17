@@ -5,19 +5,19 @@
     - [Data types](#data-types)
     - [Security](#security)
     - [Redis persistence](#redis-persistence)
-  - [Practice](#practice)
+  - [Caching](#caching)
 
 ## Theory
 
 1. [Official tutorial](https://redis.io/docs/stack/get-started/tutorials/stack-node/)
 
-Install `redis`. 
+Install `redis`.
 
 For **CLI** install `redis-cli`
 
 [Short tutorial video about the CLI](https://youtu.be/Hbt56gFj998?t=476)
 
-***
+---
 
 Redis:
 
@@ -27,11 +27,11 @@ Redis:
 - built in replication (master-slave)
 - single-threaded
 
-***
+---
 
 ### Data types
 
-Basic: 
+Basic:
 
 - string (simple key-value)
 - list (**ordered**)
@@ -45,7 +45,7 @@ Advanced:
 - hyperlogs
 - geospatial indexes
 
-***
+---
 
 ### Security
 
@@ -53,7 +53,7 @@ Advanced:
 - should only be accessed by trusted clients
 - never allow external access Internet exposure
 
-***
+---
 
 ### Redis persistence
 
@@ -88,17 +88,14 @@ Persistence refers to the writing of data to durable storage, such as a solid-st
 
 It's best to use **both** to keep your data safe (in case you care about it).
 
-***
+---
 
 By default Redis saves snapshots of the dataset on disk, in a binary file called `dump.rdb`. You can configure Redis to have it save the dataset every N seconds if there are at least M changes in the dataset, or you can manually call the `SAVE` or `BGSAVE` commands.
 
+---
 
+## Caching
 
-***
+Based on [this](https://youtu.be/KXnkhWRCj40?si=hKpbNno7ZymXQxtx) video
 
-## Practice
-
-`npm i redis`
-
-First, you need to set up a **client**. It knows how to talk to Redis on behalf of Redis OM.
-
+[Nest docks](https://docs.nestjs.com/techniques/caching)
