@@ -24,7 +24,7 @@ RUN apt-get update && \
     curl -sL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs
 
-# The following 2 blocks can be skipped if you don't need to access private repositories or you're solve this later
+# The following 2 blocks can be skipped if you don't need to access private repositories or you'll solve this later
 
 # Add gitlab.itcraftlab.com to known hosts to avoid host key verification issues
 RUN mkdir -p /var/jenkins_home/.ssh && \
@@ -78,3 +78,23 @@ To fix this, enter the Jenkins container and run the following command:
 ssh -T git@gitlab.itcraftlab.com # or the host you're trying to access
 # Press 'yes' when asked
 ```
+
+---
+
+## Dashboard
+
+### Creating new pipeline
+
+On the Jenkins dashboard:
+
+1. Go to `Configure Jenkins -> Plugins -> Available` and install the `GitLab` and `GitLab Authenticate` (and possibly `GitLab API`) plugins. Generally you'd usually also want `SSH Agent` and `Stage View`.
+2. Go to Credentials (near the Profile) and add your GitLab credentials as **SSH Username with private key**. Make sure to add your creds to the global scope (otherwiser you'll have to change the default scope in the pipeline configuration).
+3. Go to `New Item -> Pipeline` and configure it.
+   1. Use `Pipeline script from SCM`, set your GitLab repository URL, and select the credentials you've just added.
+   2. In the `Build Triggers` section, check `Build when a change is pushed to GitLab`.
+
+On GitLab:
+
+1. Go to your project's `Settings -> Integrations` and choose `Jenkins`. Configre everything. If your project URL in Jenkins looks like this: `https://jenkins.ecoski.cloud/job/ecoski/`, then fill everything this way:
+
+![](img/20240518183627.png)
