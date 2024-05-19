@@ -1,0 +1,41 @@
+pipeline {
+  agent any
+
+  environment {
+    GIT_URL = 'git@gitlab.itcraftlab.com:denis.semchenko/ecoski-mvp-snow-app-tr427-web.git'
+    GIT_BRANCH = 'development'
+    GIT_CREDENTIALS_ID = 'ecoski-gitlab'
+
+    SSH_OPTIONS = "-o StrictHostKeyChecking=no"
+
+    SERVER_NAME = 'Dev Server'
+    SERVER_USER = 'ubuntu'
+    SERVER_HOST = 'ec2-16-16-157-152.eu-north-1.compute.amazonaws.com'
+    SERVER_CREDENTIALS_ID = 'ecoski-dev'
+
+    APP_DIR = '/home/ubuntu/ecoski-mvp-snow-app-tr427-web/'
+    APP_SCRIPT = 'deploy.sh'
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git url: "${GIT_URL}",
+            branch: "${GIT_BRANCH}",
+            credentialsId: "${GIT_CREDENTIALS_ID}"
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        sshagent(credentials: ["${SERVER_CREDENTIALS_ID}"]) {
+          sh """
+            ssh ${SSH_OPTIONS} ${SERVER_USER}@${SERVER_HOST} \
+            bash -l -c \
+            "${APP_DIR}${APP_SCRIPT}" 
+          """
+        }
+      }
+    }
+  }
+}
