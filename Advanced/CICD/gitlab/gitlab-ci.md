@@ -77,7 +77,7 @@ fi
 echo Deployment finished successfully!
 ```
 
-### Create a runner on GitLab and on the server and connect them
+### Create a runner record on GitLab
 
 Go the the GitLab project and click on `Settings` -> `CI/CD` -> `Runners` -> `New project runner`
 
@@ -93,7 +93,7 @@ Use the suggested command to register your runner with you authentication token 
 
 ---
 
-### Create a Docker runner
+### Create a Docker runner and register it with the GitLab runner record
 
 You should create a process that will phisically run your pipeline. The easiest way is with Docker.
 
@@ -139,6 +139,17 @@ docker exec -it gitlab-runner bash
 # Your can get or edit your configs here
 cat /etc/gitlab-runner/config.toml
 # Add the remote host to the list of known hosts
-ssh-keyscan -H gitlab.itcraftlab.com >> ~/.ssh/known_hosts
-ssh -T git@gitlab.itcraftlab.com # answer yes
+ssh -T git@gitlab.itcraftlab.com # yes
+```
+
+---
+
+### Set the env variables for your `.gitlab-ci.yml` on GitLab: `Project Settings - CI/CD - Variables`.
+
+Usually you'd want to set these variables:
+
+```
+SSH_PRIVATE_KEY
+SSH_USER
+VM_IPADDRESS
 ```
