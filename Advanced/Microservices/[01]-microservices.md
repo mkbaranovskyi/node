@@ -15,6 +15,8 @@
   - [Payments](#payments)
     - [19 - Stripe setup](#19---stripe-setup)
   - [22 Notifications](#22-notifications)
+    - [24 Google Cloud Engine Setup](#24-google-cloud-engine-setup)
+  - [25 - Productionize and Push Dockerfile](#25---productionize-and-push-dockerfile)
 
 ---
 
@@ -328,3 +330,128 @@ Done. Now create a new user using the same email as the one you used for the OAu
 
 ---
 
+### 24 Google Cloud Engine Setup
+
+Go to `Google Cloud Console -> Container Registry` and enable the API.
+
+Also enable `Contaier Artifact Registry`. Go to it and create a repository for each of our apps (4 total). We'll push our Docker images to these repositories.
+
+![](img/20241020130929.png)
+
+![](img/20241020131325.png)
+
+Install `Google Cloud SDK`: [link](https://cloud.google.com/sdk/docs/install-sdk), login and set the project.
+
+```bash
+gcloud config configurations create sleepr
+
+gcloud config set project sleepr-439209 # Your project ID
+```
+
+Follow the instructions here 
+
+![](img/20241020133756.png)
+
+```bash
+gcloud auth application-default login
+
+gcloud artifacts repositories list
+#Listing items under project sleepr-439209, across all locations.
+
+                                                                    #ARTIFACT_REGISTRY
+#REPOSITORY     FORMAT  MODE                 DESCRIPTION  LOCATION         LABELS  ENCRYPTION          CREATE_TIME          UPDATE_TIME          SIZE (MB)
+#auth           DOCKER  STANDARD_REPOSITORY               europe-central2          Google-managed key  2024-10-20T13:10:42  2024-10-20T13:12:03  0
+#notifications  DOCKER  STANDARD_REPOSITORY               europe-central2          Google-managed key  2024-10-20T13:11:48  2024-10-20T13:12:06  0
+#payments       DOCKER  STANDARD_REPOSITORY               europe-central2          Google-managed key  2024-10-20T13:11:21  2024-10-20T13:12:09  0
+#reservations   DOCKER  STANDARD_REPOSITORY               europe-central2          Google-managed key  2024-10-20T13:08:44  2024-10-20T13:12:11  0
+```
+
+Copy and paste the command from the screenshot above:
+
+```bash
+gcloud auth configure-docker \
+    europe-central2-docker.pkg.dev
+```
+
+Build the images with local tags:
+
+```bash
+docker build -t auth -f apps/auth/Dockerfile .
+docker build -t payments -f apps/payments/Dockerfile .
+docker build -t reservations -f apps/reservations/Dockerfile .
+docker build -t notifications -f apps/notifications/Dockerfile .
+```
+
+Copy the URI from the `gcloud artifacts repositories list` command and tag the images and use it:
+
+![](img/20241020141522.png)
+
+Tag the images for Artifact Registry (including the registry path (`europe-central2-docker.pkg.dev/sleepr-439209`), repository (e.g. `auth`) and tag (`production`)):
+
+```bash
+docker tag auth europe-central2-docker.pkg.dev/sleepr-439209/auth/production # We added the `/production` part at the end
+docker tag payments europe-central2-docker.pkg.dev/sleepr-439209/payments/production
+docker tag reservations europe-central2-docker.pkg.dev/sleepr-439209/reservations/production
+docker tag notifications europe-central2-docker.pkg.dev/sleepr-439209/notifications/production
+```
+
+Push the images:
+
+```bash
+docker image push europe-central2-docker.pkg.dev/sleepr-439209/auth/production
+docker image push europe-central2-docker.pkg.dev/sleepr-439209/payments/production
+docker image push europe-central2-docker.pkg.dev/sleepr-439209/reservations/production
+docker image push europe-central2-docker.pkg.dev/sleepr-439209/notifications/production
+```
+
+Verify the images are in the registry:
+
+```bash
+gcloud artifacts docker images list europe-central2-docker.pkg.dev/sleepr-439209/reservations
+gcloud artifacts docker images list europe-central2-docker.pkg.dev/sleepr-439209/auth
+gcloud artifacts docker images list europe-central2-docker.pkg.dev/sleepr-439209/payments
+gcloud artifacts docker images list europe-central2-docker.pkg.dev/sleepr-439209/notifications
+```
+
+---
+
+## 25 - Productionize and Push Dockerfile
+
+Update our `Dockerfile`-s to only copy what each app needs.
+
+```Dockerfile
+FROM node:alpine AS build
+
+WORKDIR  /usr/src/app
+
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
+# Updates here
+COPY tsconfig*.json ./
+
+RUN npm i -g pnpm
+
+RUN pnpm i
+
+# Updates here - we only copy the necessary files
+COPY apps/payments apps/payments
+COPY libs libs
+# Updates here - install app-specific dependencies as well
+RUN cd apps/payments && pnpm i
+
+RUN pnpm run build
+
+# The rest is unchanged...
+```
+
+Create a `package.json` for every app and move their specific dependencies there from the global `package.json`.
+
+Then rebuild, tag and push the images:
+
+```bash
+docker build -t payments -f apps/payments/Dockerfile .
+docker tag payments europe-central2-docker.pkg.dev/sleepr-439209/payments/production
+docker push europe-central2-docker.pkg.dev/sleepr-439209/payments/production
+
+# Repeat for the other apps
+```
