@@ -12,11 +12,12 @@
     - [Passport](#passport)
     - [JWT Strategy](#jwt-strategy)
     - [18 - Microservices](#18---microservices)
-  - [Payments](#payments)
     - [19 - Stripe setup](#19---stripe-setup)
-  - [22 Notifications](#22-notifications)
+    - [22 Notifications](#22-notifications)
     - [24 Google Cloud Engine Setup](#24-google-cloud-engine-setup)
-  - [25 - Productionize and Push Dockerfile](#25---productionize-and-push-dockerfile)
+    - [25 - Productionize and Push Dockerfile](#25---productionize-and-push-dockerfile)
+    - [27. Automated CI/CD with CloudBuild](#27-automated-cicd-with-cloudbuild)
+    - [28. Helm and Kubernetes](#28-helm-and-kubernetes)
 
 ---
 
@@ -125,17 +126,7 @@ source /snap/google-cloud-cli/current/completion.bash.inc
 source ~/.bashrc
 ```
 
-4. Install [Minikube](https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fdebian+package) and [KubeCtl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
-
-```bash
-# Install Minukube
-curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
-sudo dpkg -i minikube_latest_amd64.deb
-
-# Install KubeCtl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-```
+4. Install [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/) and [Minikube](https://minikube.sigs.k8s.io/docs/start)
 
 5. Install Nest CLI
 
@@ -281,8 +272,6 @@ We'll also create a common `AuthGuard` that will be used in both apps. So this g
 
 ---
 
-## Payments
-
 ### 19 - Stripe setup
 
 ```bash
@@ -296,7 +285,7 @@ Click `New Business` in the top left corner and create a new product.
 
 ---
 
-## 22 Notifications
+### 22 Notifications
 
 ```bash
 nest g app notifications
@@ -304,9 +293,11 @@ nest g app notifications
 
 To create Google `OAuth` credentials, go to [Google Cloud Console](https://console.cloud.google.com/).
 
-Create new project, go to `APIs & Services` -> `Credentials` -> `OAuth Consent Screen` and fill in the required fields. Add a test user (yourself)
+Create new project, go to `APIs & Services` -> `Credentials` -> `OAuth Consent Screen` and fill in the required fields. Add a test user (yourself) as **external** user.
 
 ![](img/20241015212212.png)
+
+Add a test user (yourself) once again.
 
 ![](img/20241015212306.png)
 
@@ -348,7 +339,7 @@ gcloud config configurations create sleepr
 gcloud config set project sleepr-439209 # Your project ID
 ```
 
-Follow the instructions here 
+Follow the instructions here
 
 ![](img/20241020133756.png)
 
@@ -415,7 +406,7 @@ gcloud artifacts docker images list europe-central2-docker.pkg.dev/sleepr-439209
 
 ---
 
-## 25 - Productionize and Push Dockerfile
+### 25 - Productionize and Push Dockerfile
 
 Update our `Dockerfile`-s to only copy what each app needs.
 
@@ -454,4 +445,120 @@ docker tag payments europe-central2-docker.pkg.dev/sleepr-439209/payments/produc
 docker push europe-central2-docker.pkg.dev/sleepr-439209/payments/production
 
 # Repeat for the other apps
+```
+
+---
+
+### 27. Automated CI/CD with CloudBuild
+
+Create a `cloudbuild.yaml` file in the root of the project.
+
+Enable the `Cloud Build API` in the Google Cloud Console.
+
+![](img/20241020221812.png)
+
+---
+
+### 28. Helm and Kubernetes
+
+1. Install [Helm](https://helm.sh/)
+
+```bash
+mkdir k8s
+cd k8s
+helm create sleepr
+```
+
+2. Delete the contents of the `templates` folder clean up the `values.yaml` file.
+3. Create deployment and make sure there's always a pod running for each of our apps.
+
+```yaml
+kubectl create deployment auth --image=europe-central2-docker.pkg.dev/sleepr-439209/auth/production --dry-run=client -o yaml > deployment.yaml
+```
+
+4. Adjust the `deployment.yaml` file
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: auth
+  name: auth
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth
+  template:
+    metadata:
+      labels:
+        app: auth
+    spec:
+      containers:
+        - image: europe-central2-docker.pkg.dev/sleepr-439209/auth/production
+          name: auth
+```
+
+5. Move this file to the `k8s/sleepr/templates/auth` folder
+6. Run
+
+```bash
+cd sleepr
+helm install sleepr .
+
+# Check the status
+kubectl get po
+
+# You might see something like this
+# NAME                   READY   STATUS             RESTARTS   AGE
+# auth-84dbfd974-ln7bj   0/1     ImagePullBackOff   0          3m28s
+
+# You can see the reason for this is that the image is private
+kubectl describe po auth-84dbfd974-ln7bj
+```
+
+7. Create credentials for Kubernetes to pull the images:
+
+![](img/20241029131103.png)
+
+![](img/20241029131236.png)
+
+Role: Artifact Registry -> Artifact Registry Reader
+
+![](img/20241029131325.png)
+
+After creation, enter the newly created service account and create a key for it.
+
+![](img/20241029131731.png)
+
+Create a new JSON key and download it.
+
+![](img/20241029132217.png)
+
+8. Create a secret in Kubernetes (get the --docker-server from the `Artifact Registry - Setup instructions` page):
+
+```bash
+kubectl create secret docker-registry gcr-json-key \
+  --docker-server=europe-central2-docker.pkg.dev \
+  --docker-username=_json_key \
+  --docker-password="$(cat ./sleepr-439209-8b78089e4961.json)" \
+  --docker-email=kostortitus@gmail.com
+```
+
+Now we have to add our key to the default service account so it's actually used.
+
+```bash
+kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "gcr-json-key"}]}'
+
+kubectl rollout restart deployment auth
+```
+
+Repeat points 3-5 for the other apps.
+
+Upgrade the Helm chart to include the other apps:
+
+```bash
+cd k8s/sleepr
+helm upgrade sleepr .
 ```

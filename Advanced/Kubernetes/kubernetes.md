@@ -2,6 +2,7 @@
 
 - [Kubernetes](#kubernetes)
   - [Intro](#intro)
+    - [Commands cheat sheet](#commands-cheat-sheet)
   - [Components](#components)
     - [Master node](#master-node)
     - [Worker nodes](#worker-nodes)
@@ -47,6 +48,120 @@ Each node has different apps deployed on it. For example, the number of Docker c
 ![](img/20240511045840.png)
 
 </details>
+
+---
+
+### Commands cheat sheet
+
+Pods
+
+```bash
+# Create a pod
+kubectl create -f <pod-config-file>
+
+# Create a pod from an image
+kubectl run <pod-name> --image=my-image
+
+# Get all pods in the default namespace
+kubectl get po
+
+# Get all pods in all namespaces
+kubectl get po --all-namespaces
+
+# Get all pods in a specific namespace
+kubectl get po -n <namespace>
+
+# Get detailed information about a pod
+kubectl describe po <pod-name>
+
+# Get logs from a pod
+kubectl logs <pod-name>
+
+# Execute a command in a pod
+kubectl exec -it <pod-name> -- <command>
+
+# Delete a pod
+kubectl delete po <pod-name>
+```
+
+Deployments
+
+```bash
+# Create a deployment
+kubectl create -f <deployment-config-file>
+
+# Create a deployment from an image
+kubectl create deployment <deployment-name> --image=my-image
+
+# Get all deployments in the default namespace
+kubectl get deploy
+
+# Scale a deployment
+kubectl scale --replicas=4 deployment/<deployment-name>
+
+# Update a deployment (rolling update)
+kubectl set image deployment/<deployment-name> <container-name>=my-new-image
+
+# Get detailed information about a deployment
+kubectl describe deploy <deployment-name>
+
+# Delete a deployment
+kubectl delete deploy <deployment-name>
+```
+
+Services
+
+```bash
+# Create a service
+kubectl create -f <service-config-file>
+
+# Expose deployment as a service
+kubectl expose deployment <deployment-name> --type=NodePort --port=80
+
+# Get all services in the default namespace
+kubectl get svc
+
+# Get detailed information about a service
+kubectl describe svc <service-name>
+
+# Delete a service
+kubectl delete svc <service-name>
+```
+
+Namespaces
+
+```bash
+# Create a namespace
+kubectl create namespace <namespace-name>
+
+# Get all namespaces
+kubectl get ns
+
+# Get detailed information about a namespace
+kubectl describe ns <namespace-name>
+
+# Switch to a namespace
+kubectl config set-context --current --namespace=<namespace-name>
+
+# Delete a namespace
+kubectl delete ns <namespace-name>
+```
+
+Secrets
+
+```bash
+# Create a secret
+kubectl create secret generic <secret-name> --from-literal=<key>=<value>
+
+# Get all secrets in the default namespace
+kubectl get secret
+
+# Get detailed information about a secret
+kubectl describe secret <secret-name>
+
+# Delete a secret
+kubectl delete secret <secret-name>
+```
 
 ---
 
