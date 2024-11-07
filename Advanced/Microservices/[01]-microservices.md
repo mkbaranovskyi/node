@@ -18,6 +18,8 @@
     - [25 - Productionize and Push Dockerfile](#25---productionize-and-push-dockerfile)
     - [27. Automated CI/CD with CloudBuild](#27-automated-cicd-with-cloudbuild)
     - [28. Helm and Kubernetes](#28-helm-and-kubernetes)
+    - [29. Mongo Atlas](#29-mongo-atlas)
+    - [30 Kubernetes Services \& Env Variables](#30-kubernetes-services--env-variables)
 
 ---
 
@@ -561,4 +563,198 @@ Upgrade the Helm chart to include the other apps:
 ```bash
 cd k8s/sleepr
 helm upgrade sleepr .
+```
+
+---
+
+### 29. Mongo Atlas
+
+Create a new cluster in [Mongo Atlas](https://www.mongodb.com/cloud/atlas). Create a new user and add it to the cluster.
+
+```bash
+kubectl create secret generic mongodb \
+  --from-literal=connectionString=mongodb+srv://sleeprnestapp:<pass>@sleepr.ptlyl.mongodb.net/?retryWrites=true&w=majority&appName=Sleepr
+
+# Verify the secret
+kubectl get secrets
+# NAME                           TYPE                             DATA   AGE
+# gcr-json-key                   kubernetes.io/dockerconfigjson   1      21h
+# mongodb                        Opaque                           1      16s
+# sh.helm.release.v1.sleepr.v1   helm.sh/release.v1               1      21h
+# sh.helm.release.v1.sleepr.v2   helm.sh/release.v1               1      21h
+```
+
+Modify the `deployment.yaml` files to include the `mongodb` secret and the `MONGO_URI` environment variable.
+
+Update helm chart values:
+
+```bash
+cd k8s/sleepr
+helm upgrade sleepr .
+# Release "sleepr" has been upgraded. Happy Helming!
+# NAME: sleepr
+# LAST DEPLOYED: Thu Nov  7 20:11:58 2024
+# NAMESPACE: default
+# STATUS: deployed
+# REVISION: 3
+# TEST SUITE: None
+```
+
+---
+
+### 30 Kubernetes Services & Env Variables
+
+Create an additional secret for `notifications` app:
+
+```bash
+kubectl create secret generic google \
+  --from-literal=clientSecret=GOC... \
+  --from-literal=refreshToken=1//...
+```
+
+Update the `deployment.yaml` file for the `notifications` app to include the `google` secret and the `GOOGLE_CLIENT_SECRET` and `GOOGLE_REFRESH
+
+```bash
+helm upgrade sleepr .
+# Release "sleepr" has been upgraded. Happy Helming!
+# NAME: sleepr
+# LAST DEPLOYED: Thu Nov  7 21:42:56 2024
+# NAMESPACE: default
+# STATUS: deployed
+# REVISION: 6
+# TEST SUITE: None
+
+kubectl get po
+# NAME                            READY   STATUS                       RESTARTS         AGE
+# auth-54c9c76986-lqpj4           0/1     CreateContainerConfigError   0                75m
+# auth-84dbfd974-vbqjr            0/1     CrashLoopBackOff             53 (21s ago)     23h
+# notifications-fb6ddf456-9fl9m   1/1     Running                      0                39s   <<<<<< HERE
+# payments-86f65955fc-84nl5       0/1     CrashLoopBackOff             52 (4m59s ago)   23h
+# reservations-6455b8f647-ms2vn   0/1     Error                        56 (5m23s ago)   23h
+# reservations-77459968f9-rwmhc   0/1     CreateContainerConfigError   0                91m
+
+# Now it shows standard Nest logs
+kubectl logs notifications-fb6ddf456-9fl9m
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [NestFactory] Starting Nest application...
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +14ms
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [InstanceLoader] ConfigHostModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [InstanceLoader] ConfigModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 7:42:59 PM     LOG [InstanceLoader] NotificationsModule dependencies initialized +6ms
+# [19:42:59.068] INFO (1): Nest microservice successfully started {"context":"NestMicroservice"}
+```
+
+Now we want to create a Service for our Notifications app so other apps can communicate with it.
+
+```bash
+kubectl create service clusterip notifications --tcp=3000 --dry-run=client -o yaml > service.yaml
+# Remove the unneeded parts and proceed
+
+cd k8s/sleepr
+helm upgrade sleepr .
+
+kubectl get svc
+# NAME            TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+# kubernetes      ClusterIP   10.96.0.1        <none>        443/TCP    9d
+# notifications   ClusterIP   10.105.233.247   <none>        3000/TCP   44s   <<<<<< HERE
+```
+
+Add env data to the `deployment.yaml` file for the `payments` app.
+
+Create a secret for the `payments` app:
+
+```bash
+kubectl create secret generic stripe /
+  --from-literal=apiKey=sk_test_51J...
+```
+
+Update the `deployment.yaml` file for the `payments` app to include the `stripe` secret and the `STRIPE_API_KEY` environment variable.
+
+Upgrade the Helm chart:
+
+```bash
+cd k8s/sleepr
+helm upgrade sleepr .
+```
+
+Eventually you'll have to see the app running:
+
+```bash
+kubectl logs payments-76f49bbdf-2vfzz
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [NestFactory] Starting Nest application...
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +12ms
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] ConfigHostModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +1ms
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] ConfigModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] ClientsModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:15:46 PM     LOG [InstanceLoader] PaymentsModule dependencies initialized +3ms
+# [21:15:46.232] INFO (1): Nest microservice successfully started {"context":"NestMicroservice"}
+```
+
+For `auth` app we need to create a secret for the `JWT_SECRET`:
+
+```bash
+kubectl create secret generic jwt --from-literal=jwtSecret=Q6BTLX...
+```
+
+Modify the `deployment.yaml` file for the `auth` app to include all the needed variables.
+
+Upgrade the Helm chart:
+
+```bash
+cd k8s/sleepr
+helm upgrade sleepr .
+
+# Verify the pod is running
+kubectl get po
+# NAME                            READY   STATUS                       RESTARTS       AGE
+# auth-86c87d79b7-jp6sc           1/1     Running                      0              49s
+# notifications-fb6ddf456-9fl9m   1/1     Running                      0              108m
+# payments-76f49bbdf-2vfzz        1/1     Running                      0              15m
+# reservations-6455b8f647-ms2vn   0/1     CrashLoopBackOff             73 (56s ago)   25h
+# reservations-77459968f9-rwmhc   0/1     CreateContainerConfigError   0              3h19m
+
+kubectl logs auth-86c87d79b7-jp6sc
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [NestFactory] Starting Nest application...
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +15ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] DatabaseModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] MongooseModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] ConfigHostModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] LoggerModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] ConfigModule dependencies initialized +0ms
+# [Nest] 1  - 11/07/2024, 9:30:46 PM     LOG [InstanceLoader] JwtModule dependencies initialized +17ms
+# [Nest] 1  - 11/07/2024, 9:30:47 PM     LOG [InstanceLoader] MongooseCoreModule dependencies initialized +965ms
+# [Nest] 1  - 11/07/2024, 9:30:47 PM     LOG [InstanceLoader] MongooseModule dependencies initialized +3ms
+# [Nest] 1  - 11/07/2024, 9:30:47 PM     LOG [InstanceLoader] UsersModule dependencies initialized +2ms
+# [Nest] 1  - 11/07/2024, 9:30:47 PM     LOG [InstanceLoader] AuthModule dependencies initialized +0ms
+# [21:30:47.398] INFO (1): Nest microservice successfully started {"context":"NestMicroservice"}
+# [21:30:47.411] INFO (1): AuthController {/auth}: {"context":"RoutesResolver"}
+# [21:30:47.413] INFO (1): Mapped {/auth/login, POST} route {"context":"RouterExplorer"}
+# [21:30:47.413] INFO (1): UsersController {/users}: {"context":"RoutesResolver"}
+# [21:30:47.413] INFO (1): Mapped {/users, GET} route {"context":"RouterExplorer"}
+# [21:30:47.413] INFO (1): Mapped {/users, POST} route {"context":"RouterExplorer"}
+# [21:30:47.415] INFO (1): Nest application successfully started {"context":"NestApplication"}
+```
+
+Generate a service for our Payments deployment
+
+```bash
+cd k8s/sleepr/templates/payments
+```
+
+Create a service for the `auth` app:
+
+```bash
+kubectl create service clusterip auth --tcp=3002,3003 --dry-run=client -o yaml > service.yaml
+```
+
+Add env values to the `reservations` app and upgrade the Helm chart. You should see all 4 apps running.
+
+```bash
+kubectl get po
+# NAME                            READY   STATUS    RESTARTS   AGE
+# auth-86c87d79b7-jp6sc           1/1     Running   0          21m
+# notifications-fb6ddf456-9fl9m   1/1     Running   0          128m
+# payments-76f49bbdf-2vfzz        1/1     Running   0          36m
+# reservations-587c9696b5-fpwx2   1/1     Running   0          11s
 ```

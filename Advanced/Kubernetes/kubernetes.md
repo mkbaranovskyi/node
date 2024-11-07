@@ -102,8 +102,8 @@ kubectl scale --replicas=4 deployment/<deployment-name>
 # Update a deployment (rolling update)
 kubectl set image deployment/<deployment-name> <container-name>=my-new-image
 
-# Get detailed information about a deployment
-kubectl describe deploy <deployment-name>
+# Get detailed information about a deployment in a YAML format
+kubectl describe deploy <deployment-name> -o yaml
 
 # Delete a deployment
 kubectl delete deploy <deployment-name>
@@ -121,8 +121,8 @@ kubectl expose deployment <deployment-name> --type=NodePort --port=80
 # Get all services in the default namespace
 kubectl get svc
 
-# Get detailed information about a service
-kubectl describe svc <service-name>
+# Get detailed information about a service in a YAML format
+kubectl describe svc <service-name> -o yaml
 
 # Delete a service
 kubectl delete svc <service-name>
@@ -137,8 +137,8 @@ kubectl create namespace <namespace-name>
 # Get all namespaces
 kubectl get ns
 
-# Get detailed information about a namespace
-kubectl describe ns <namespace-name>
+# Get detailed information about a namespace as a YAML file
+kubectl describe ns <namespace-name> -o yaml > namespace.yaml
 
 # Switch to a namespace
 kubectl config set-context --current --namespace=<namespace-name>
@@ -156,8 +156,8 @@ kubectl create secret generic <secret-name> --from-literal=<key>=<value>
 # Get all secrets in the default namespace
 kubectl get secret
 
-# Get detailed information about a secret
-kubectl describe secret <secret-name>
+# Get detailed information about a secret as a YAML file
+kubectl describe secret <secret-name> -o yaml > secret.yaml
 
 # Delete a secret
 kubectl delete secret <secret-name>
